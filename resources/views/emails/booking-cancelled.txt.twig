@@ -1,0 +1,12 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+Votre rendez-vous du {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}, réf. {{ booking.reference }}) est annulé.
+{% if payload.note ?? false %}
+{{ payload.note }}
+{% endif %}
+
+Pour reprendre rendez-vous : {{ base_url }}/reserver
+
+— {{ site_name }}
+{% endautoescape %}

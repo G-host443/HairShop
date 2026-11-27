@@ -1,0 +1,65 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.gallery' %}
+{% block title %}Galerie{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-primary" href="{{ url('admin.gallery.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Ajouter une réalisation</a>
+{% endblock %}
+
+{% block content %}
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+        <div>
+            <label class="form-label small mb-1" for="g-cat">Catégorie</label>
+            <select class="form-select form-select-sm" id="g-cat" name="categorie">
+                <option value="">Toutes</option>
+                {% for c in categories %}<option value="{{ c.id }}"{{ current_category == c.id ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrer</button>
+        <a class="small ms-auto" href="/galerie" target="_blank" rel="noopener">Voir la galerie sur le site <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+    </form>
+
+    <div class="admin-card">
+        {% if items is empty %}
+            <p class="text-secondary mb-0">Aucune réalisation. Importez vos photos dans <a href="{{ url('admin.media') }}">Médias</a>, puis ajoutez-les ici.</p>
+        {% else %}
+            <p class="small text-secondary"><i class="bi bi-arrows-move" aria-hidden="true"></i> Faites glisser pour changer l'ordre. Les réalisations mises en avant passent en premier sur le site.</p>
+            <ul class="admin-list list-unstyled mb-0"{% if current_category is null %} data-sortable="{{ url('admin.gallery.reorder') }}"{% endif %}>
+                {% for item in items %}
+                    {% set image = media[item.media_id] ?? null %}
+                    <li class="admin-list-item{{ not item.is_published ? ' is-muted' }}" data-id="{{ item.id }}">
+                        {% if current_category is null %}<span class="admin-drag" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                        <span class="admin-gallery-thumb">{% if image %}<img src="{{ image.url('thumb') }}" alt="" loading="lazy">{% endif %}</span>
+                        <span class="admin-list-main">
+                            <a href="{{ url('admin.gallery.edit', {id: item.id}) }}" class="fw-medium">{{ item.title }}</a>
+                            <span class="small text-secondary d-block">
+                                {{ item.category_name ?? 'Sans catégorie' }}{% if item.service_name %} · {{ item.service_name }}{% endif %}{% if item.after_media_id %} · avant / après{% endif %}{% if item.tags is not empty %} · {{ item.tags|join(', ') }}{% endif %}
+                            </span>
+                        </span>
+                        <span class="admin-list-badges">
+                            {% if item.is_featured %}<span class="badge text-bg-warning">En avant</span>{% endif %}
+                            {% if not item.is_published %}<span class="badge text-bg-secondary">Masquée</span>{% endif %}
+                        </span>
+                        <span class="admin-list-actions">
+                            <form method="post" action="{{ url('admin.gallery.toggle', {id: item.id, flag: 'avant'}) }}">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ item.is_featured ? 'Retirer de la mise en avant' : 'Mettre en avant' }}"><i class="bi bi-star{{ item.is_featured ? '-fill' }}" aria-hidden="true"></i><span class="visually-hidden"> {{ item.is_featured ? 'Retirer de la mise en avant' : 'Mettre en avant' }} : {{ item.title }}</span></button>
+                            </form>
+                            <form method="post" action="{{ url('admin.gallery.toggle', {id: item.id, flag: 'publication'}) }}">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ item.is_published ? 'Masquer' : 'Publier' }}"><i class="bi bi-{{ item.is_published ? 'eye-slash' : 'eye' }}" aria-hidden="true"></i><span class="visually-hidden"> {{ item.is_published ? 'Masquer' : 'Publier' }} : {{ item.title }}</span></button>
+                            </form>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.gallery.edit', {id: item.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden"> Modifier {{ item.title }}</span></a>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-sortable.js') }}"></script>
+{% endblock %}

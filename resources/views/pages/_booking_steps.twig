@@ -1,0 +1,12 @@
+{# Indicateur d'étapes du parcours de réservation. #}
+{% set keys = steps|keys %}
+{% set current_index = keys|filter(k => k == step)|keys|first %}
+<ol class="booking-steps" aria-label="Étapes de la réservation">
+    {% for key, label in steps %}
+        {% set index = loop.index0 %}
+        <li class="booking-step{{ index < current_index ? ' is-done' }}{{ key == step ? ' is-current' }}"{% if key == step %} aria-current="step"{% endif %}>
+            <span class="booking-step-number" aria-hidden="true">{{ loop.index }}</span>
+            <span class="booking-step-label">{{ label }}</span>
+        </li>
+    {% endfor %}
+</ol>

@@ -1,0 +1,10 @@
+{% extends 'layouts/system.twig' %}
+
+{% block title %}Page introuvable — {{ app.name }}{% endblock %}
+
+{% block content %}
+    <p class="sys-code">404</p>
+    <h1 class="sys-title">Cette page n'existe pas</h1>
+    <p class="sys-lead">Elle a peut-être été déplacée ou supprimée.</p>
+    <p><a class="sys-btn" href="/">Retour à l'accueil</a></p>
+{% endblock %}

@@ -1,0 +1,44 @@
+{
+    "slug": "modern-hair-studio",
+    "name": "Modern Hair Studio",
+    "version": "1.0.0",
+    "description": "Studio urbain : typographie forte en capitales, mise en page asymétrique, contrastes francs et accent terracotta. Bandeaux sombres pour les avis.",
+    "tokens": {
+        "color.bg": "#F4F2EE",
+        "color.surface": "#FFFFFF",
+        "color.surface-alt": "#E9E5DE",
+        "color.border": "#D3CEC6",
+        "color.accent": "#E2622F",
+        "color.accent-light": "#F6C8B4",
+        "color.accent-dark": "#9E3512",
+        "color.text": "#2A2826",
+        "color.text-muted": "#5E5A55",
+        "color.heading": "#141414",
+        "color.on-accent": "#141414",
+        "font.heading": "DM Serif Display",
+        "font.body": "Outfit",
+        "font.script": "Dancing Script",
+        "radius.card": "6px",
+        "radius.image": "4px",
+        "radius.button": "6px",
+        "space.section": "120px",
+        "size.container": "1240px",
+        "motion.level": "subtle"
+    },
+    "layout": {
+        "header": ["sticky", "static"]
+    },
+    "sections": {
+        "hero": ["split-bold", "centered"],
+        "pricing_grid": ["chips"],
+        "gallery": ["grid", "masonry"],
+        "practical_info": ["three-columns"],
+        "testimonials": ["cards"],
+        "contact": ["buttons", "form"],
+        "cta": ["banner"],
+        "rich_text": ["prose"],
+        "promotions": ["cards"],
+        "blog_latest": ["cards"]
+    },
+    "home_preset": ["hero", "pricing_grid", "gallery", "testimonials", "practical_info", "contact"]
+}

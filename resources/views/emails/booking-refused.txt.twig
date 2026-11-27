@@ -1,0 +1,12 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+Je ne peux malheureusement pas accepter votre demande pour le {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}).
+{% if payload.note ?? false %}
+{{ payload.note }}
+{% endif %}
+
+Pour choisir un autre créneau : {{ base_url }}/reserver
+
+— {{ site_name }}
+{% endautoescape %}

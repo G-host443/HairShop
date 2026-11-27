@@ -1,0 +1,14 @@
+<section class="section booking">
+    <div class="container">
+        <div class="booking-done card">
+            <h2 class="booking-title">Réservation par message</h2>
+            <p class="booking-lead">La réservation en ligne est momentanément fermée. Écrivez-moi avec la coiffure, la taille et la longueur souhaitées : je vous réponds avec mes disponibilités.</p>
+            <div class="booking-actions booking-actions-center">
+                {% if contact.mode == 'whatsapp' %}
+                    <a class="btn btn-primary" href="https://wa.me/{{ contact.whatsapp }}" target="_blank" rel="noopener">Écrire sur WhatsApp</a>
+                {% endif %}
+                <a class="btn btn-ghost" href="/contact#contact">Formulaire de contact</a>
+            </div>
+        </div>
+    </div>
+</section>

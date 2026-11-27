@@ -1,0 +1,203 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.services' %}
+{% set is_new = service.id is null %}
+{% block title %}{{ is_new ? 'Nouvelle prestation' : service.name }}{% endblock %}
+
+{% block actions %}
+    {% if not is_new and service.pricing_mode == 'matrix' %}
+        <a class="btn btn-outline-secondary" href="{{ url('admin.services.grid', {id: service.id}) }}"><i class="bi bi-table" aria-hidden="true"></i> Grille de prix</a>
+    {% endif %}
+    {% if not is_new and service.is_active %}
+        <a class="btn btn-outline-secondary" href="/prestations/{{ service.slug }}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Voir sur le site</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% include 'admin/catalog/_tabs.twig' %}
+
+    {% set action = is_new ? url('admin.services.store') : url('admin.services.update', {id: service.id}) %}
+    <form method="post" action="{{ action }}" novalidate>
+        {{ csrf_field() }}
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Informations</h2>
+                    <div class="row g-3">
+                        <div class="col-md-8">{{ forms.input('name', 'Nom', {required: true, maxlength: 120, value: service.name}) }}</div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label" for="f-category_id">Catégorie <span class="text-danger" aria-hidden="true">*</span></label>
+                                {% set selected_category = old('category_id', service.category_id) %}
+                                <select class="form-select{{ errors('category_id') ? ' is-invalid' }}" id="f-category_id" name="category_id" required>
+                                    <option value="">Choisir…</option>
+                                    {% for c in categories %}<option value="{{ c.id }}"{{ (c.id ~ '') == (selected_category ~ '') ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+                                </select>
+                                {% if errors('category_id') %}<div class="invalid-feedback">{{ errors('category_id')|first }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {{ forms.input('slug', 'Adresse de la page', {maxlength: 120, value: service.slug, help: 'Fin de l\'adresse : /prestations/… Laissez vide pour la créer à partir du nom.'}) }}
+                    {{ forms.input('summary', 'Résumé', {maxlength: 300, value: service.summary, help: 'Une phrase affichée dans les listes.'}) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="f-description">Description détaillée</label>
+                        <textarea class="form-control{{ errors('description') ? ' is-invalid' }}" id="f-description" name="description" rows="6" maxlength="5000">{{ old('description', service.description) }}</textarea>
+                        {% if errors('description') %}<div class="invalid-feedback">{{ errors('description')|first }}</div>{% endif %}
+                        <div class="form-text">Séparez les paragraphes par une ligne vide.</div>
+                    </div>
+                </div>
+
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Tarif et durée</h2>
+                    {% set mode = old('pricing_mode', service.pricing_mode) %}
+                    <fieldset class="mb-3">
+                        <legend class="form-label">Type de tarif</legend>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="pricing_mode" id="mode-matrix" value="matrix"{{ mode == 'matrix' ? ' checked' }} data-pricing-mode>
+                            <label class="form-check-label" for="mode-matrix"><strong>Grille taille × longueur</strong> — le prix dépend de la taille des tresses et de la longueur (knotless, box braids…)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="pricing_mode" id="mode-simple" value="simple"{{ mode == 'simple' ? ' checked' }} data-pricing-mode>
+                            <label class="form-check-label" for="mode-simple"><strong>Prix unique</strong> — un seul prix (bantu knots, shampoing…)</label>
+                        </div>
+                    </fieldset>
+
+                    <div class="row g-3" data-simple-price{{ mode == 'matrix' ? ' hidden' }}>
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-price_kind">Affichage du prix</label>
+                            {% set kind = old('price_kind', service.price_kind) %}
+                            <select class="form-select" id="f-price_kind" name="price_kind" data-price-kind>
+                                <option value="fixed"{{ kind == 'fixed' ? ' selected' }}>Prix fixe (« 60 € »)</option>
+                                <option value="from"{{ kind == 'from' ? ' selected' }}>Prix de départ (« à partir de 60 € »)</option>
+                                <option value="quote"{{ kind == 'quote' ? ' selected' }}>Sur devis</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" data-price-field>
+                            {{ forms.input('price', 'Prix (€)', {value: service.price is not null ? service.price|number_format(2, ',', '') : '', maxlength: 20}) }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-duration_minutes">Durée par défaut <span class="text-danger" aria-hidden="true">*</span></label>
+                            <div class="input-group has-validation">
+                                <input type="number" class="form-control{{ errors('duration_minutes') ? ' is-invalid' }}" id="f-duration_minutes" name="duration_minutes" min="15" max="1440" step="15" value="{{ old('duration_minutes', service.duration_minutes) }}" required aria-describedby="f-duration-help">
+                                <span class="input-group-text">minutes</span>
+                                {% if errors('duration_minutes') %}<div class="invalid-feedback">{{ errors('duration_minutes')|first }}</div>{% endif %}
+                            </div>
+                            <div class="form-text" id="f-duration-help">Utilisée pour bloquer le créneau. Dans une grille, chaque taille ou longueur peut avoir sa propre durée.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Contenu de la fiche</h2>
+                    {{ forms.input('alert_text', 'Alerte affichée avec le prix', {maxlength: 300, value: service.alert_text, help: 'Ex. : « Si knotless à l\'arrière, un supplément de 15 € s\'applique. »'}) }}
+                    {{ forms.input('note', 'Note', {maxlength: 300, value: service.note}) }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-benefits">Avantages</label>
+                            <textarea class="form-control" id="f-benefits" name="benefits" rows="4" aria-describedby="f-lines-help">{{ old('benefits', service.benefits|join("\n")) }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="f-steps">Étapes de réalisation</label>
+                            <textarea class="form-control" id="f-steps" name="steps" rows="4" aria-describedby="f-lines-help">{{ old('steps', service.steps|join("\n")) }}</textarea>
+                        </div>
+                    </div>
+                    <div class="form-text mb-3" id="f-lines-help">Une ligne par élément.</div>
+                    <div class="mb-0">
+                        <label class="form-label" for="f-recommendations">Recommandations</label>
+                        <textarea class="form-control" id="f-recommendations" name="recommendations" rows="3" maxlength="2000">{{ old('recommendations', service.recommendations) }}</textarea>
+                    </div>
+                </div>
+
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Référencement</h2>
+                    {{ forms.input('seo_title', 'Titre pour Google', {maxlength: 70, value: service.seo_title, help: 'Laissez vide pour utiliser le nom de la prestation.'}) }}
+                    {{ forms.input('seo_description', 'Description pour Google', {maxlength: 200, value: service.seo_description}) }}
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Publication</h2>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="f-is_active" name="is_active" value="1"{{ old('is_active', service.is_active) ? ' checked' }}>
+                        <label class="form-check-label" for="f-is_active">Visible sur le site</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="f-is_featured" name="is_featured" value="1"{{ old('is_featured', service.is_featured) ? ' checked' }}>
+                        <label class="form-check-label" for="f-is_featured">Mettre en avant</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">{{ is_new ? 'Créer la prestation' : 'Enregistrer' }}</button>
+                </div>
+
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Photos</h2>
+                    <div data-media-gallery data-input-name="image_ids[]">
+                        <ul class="admin-gallery-field list-unstyled" data-gallery-list>
+                            {% for image in images %}
+                                <li data-id="{{ image.id }}">
+                                    <input type="hidden" name="image_ids[]" value="{{ image.id }}">
+                                    <img src="{{ image.url('thumb') }}" alt="{{ image.altText }}">
+                                    <button type="button" class="btn-close" aria-label="Retirer cette photo" data-gallery-remove></button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-gallery-add><i class="bi bi-images" aria-hidden="true"></i> Ajouter des photos</button>
+                        <div class="form-text">La première photo sert de couverture. Faites glisser pour changer l'ordre.</div>
+                    </div>
+                </div>
+
+                <div class="admin-card mb-4">
+                    <h2 class="h6 mb-3">Options proposées</h2>
+                    <p class="small text-secondary">Par défaut, la prestation reprend les options de sa catégorie.</p>
+                    {% for group in groups %}
+                        {% set inherited = group.id in inherited_groups %}
+                        {% set state = overrides[group.id] is defined ? (overrides[group.id] ? 'add' : 'exclude') : 'inherit' %}
+                        <div class="mb-3">
+                            <label class="form-label mb-1" for="og-{{ group.id }}">{{ group.label }}</label>
+                            <select class="form-select form-select-sm" id="og-{{ group.id }}" name="option_groups[{{ group.id }}]">
+                                <option value="inherit"{{ state == 'inherit' ? ' selected' }}>Comme la catégorie ({{ inherited ? 'proposé' : 'non proposé' }})</option>
+                                <option value="add"{{ state == 'add' ? ' selected' }}>Toujours proposer</option>
+                                <option value="exclude"{{ state == 'exclude' ? ' selected' }}>Ne pas proposer</option>
+                            </select>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if all_services is not empty %}
+                    <div class="admin-card mb-4">
+                        <h2 class="h6 mb-2"><label for="f-related">Prestations complémentaires</label></h2>
+                        <select class="form-select" id="f-related" name="related_ids[]" multiple size="8" aria-describedby="f-related-help">
+                            {% for s in all_services %}
+                                <option value="{{ s.id }}"{{ s.id in related_ids ? ' selected' }}>{{ s.category_name }} — {{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text" id="f-related-help">Ctrl + clic (ou Cmd + clic) pour en choisir plusieurs.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% if not is_new %}
+        <div class="admin-card border-danger-subtle mt-2">
+            <h2 class="h6">Supprimer la prestation</h2>
+            <p class="small text-secondary">Impossible si elle a déjà été réservée : désactivez-la dans ce cas.</p>
+            <form method="post" action="{{ url('admin.services.destroy', {id: service.id}) }}" data-confirm="Supprimer définitivement « {{ service.name }} » et sa grille de prix ?">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash" aria-hidden="true"></i> Supprimer</button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-service-form.js') }}"></script>
+{% endblock %}

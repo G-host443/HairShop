@@ -1,0 +1,40 @@
+{# Liste des prestations, commune à tous les templates (classes génériques). #}
+<section class="section services-index">
+    <div class="container">
+        {% if categories is empty %}
+            <p class="section-intro">Les prestations seront bientôt présentées ici.</p>
+        {% else %}
+            {% if categories|length > 1 %}
+                <nav class="chip-row" aria-label="Catégories">
+                    {% for category in categories %}<a class="chip" href="#categorie-{{ category.slug }}">{{ category.name }}</a>{% endfor %}
+                </nav>
+            {% endif %}
+            {% for category in categories %}
+                <section class="services-category" id="categorie-{{ category.slug }}" aria-labelledby="sc-{{ category.id }}">
+                    <h2 class="section-title services-category-title" id="sc-{{ category.id }}">{{ category.name }}</h2>
+                    {% if category.note %}<p class="section-intro">{{ category.note }}</p>{% endif %}
+                    <ul class="service-cards">
+                        {% for service in category.services %}
+                            <li class="card service-card">
+                                <a href="{{ url('services.show', {slug: service.slug}) }}" class="service-card-link">
+                                    <span class="service-card-media">
+                                        {% if service.cover %}
+                                            <img src="{{ service.cover.url('medium') }}" alt="" loading="lazy" width="{{ service.cover.width }}" height="{{ service.cover.height }}">
+                                        {% else %}
+                                            <span class="service-card-initial" aria-hidden="true">{{ service.name|first }}</span>
+                                        {% endif %}
+                                    </span>
+                                    <span class="service-card-body">
+                                        <span class="service-card-name">{{ service.name }}</span>
+                                        {% if service.summary %}<span class="service-card-summary">{{ service.summary }}</span>{% endif %}
+                                        <span class="service-card-price">{% if service.original_price_label %}<s class="price-original" aria-label="au lieu de {{ service.original_price_label }}">{{ service.original_price_label }}</s> {% endif %}{{ service.price_label }}{% if service.promotion %} <span class="promo-badge" title="{{ service.promotion.name }}">{{ service.promotion.badge }}</span>{% endif %}</span>
+                                    </span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endfor %}
+        {% endif %}
+    </div>
+</section>

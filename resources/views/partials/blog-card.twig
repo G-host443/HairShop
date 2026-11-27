@@ -1,0 +1,19 @@
+{# Carte d'article. Paramètres : post (avec summary, reading_minutes), cover (Media ou null), heading (niveau du titre, h2 par défaut). #}
+{% set heading = heading ?? 'h2' %}
+<article class="blog-card card">
+    <a class="blog-card-media" href="/blog/{{ post.slug }}" tabindex="-1" aria-hidden="true">
+        {% if cover %}
+            <img src="{{ cover.url('medium') }}" alt="" loading="lazy"{% if cover.width %} width="{{ cover.width }}" height="{{ cover.height }}"{% endif %}>
+        {% else %}
+            <span class="blog-card-placeholder">{{ post.title|first }}</span>
+        {% endif %}
+    </a>
+    <div class="blog-card-body">
+        <p class="blog-meta">
+            {% if post.category_name %}<a href="/blog/categorie/{{ post.category_slug }}">{{ post.category_name }}</a> · {% endif %}
+            <time datetime="{{ post.published_at|date('Y-m-d') }}">{{ post.published_at|date_fr('day')|capitalize }}</time> · {{ post.reading_minutes }} min de lecture
+        </p>
+        <{{ heading }} class="blog-card-title"><a href="/blog/{{ post.slug }}">{{ post.title }}</a></{{ heading }}>
+        {% if post.summary %}<p class="blog-card-summary">{{ post.summary }}</p>{% endif %}
+    </div>
+</article>

@@ -1,0 +1,20 @@
+<section class="section practical" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="practical-title-{{ section.id }}">
+    <div class="container">
+        <h2 class="section-title" id="practical-title-{{ section.id }}">{{ title }}</h2>
+        {% if location %}
+            <h3>Où</h3>
+            {% if location.public %}<p>{{ location.public }}</p>{% endif %}
+            {% if location.address %}<p>{{ location.address|nl2br }}</p>{% endif %}
+            {% if not location.is_salon %}<p>L'adresse exacte vous est envoyée avec la confirmation du rendez-vous.</p>{% endif %}
+        {% endif %}
+        {% if hours is not empty %}
+            <h3>Horaires</h3>
+            <dl class="hours">{% for row in hours %}<div class="hours-row"><dt>{{ row.days }}</dt><dd>{{ row.hours }}</dd></div>{% endfor %}</dl>
+            {% for closure in closures %}<p class="notice">{{ closure.label }}</p>{% endfor %}
+        {% endif %}
+        {% if rules is not empty %}
+            <h3>À savoir avant de venir</h3>
+            <ul>{% for rule in rules %}<li>{{ rule }}</li>{% endfor %}</ul>
+        {% endif %}
+    </div>
+</section>

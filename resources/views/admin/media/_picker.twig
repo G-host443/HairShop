@@ -1,0 +1,23 @@
+{# Fenêtre de sélection d'une image de la bibliothèque (utilisée par les champs « media »). #}
+<div class="modal fade" id="media-picker" tabindex="-1" aria-labelledby="media-picker-title" aria-hidden="true"
+     data-endpoint="{{ url('api.admin.media') }}" data-library-url="{{ url('admin.media') }}">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="media-picker-title">Choisir une image</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <label class="visually-hidden" for="media-picker-search">Rechercher une image</label>
+                <input type="search" class="form-control mb-3" id="media-picker-search" placeholder="Rechercher par nom ou description…" data-picker-search>
+                <div class="admin-media-grid" data-picker-grid role="list"></div>
+                <p class="text-secondary text-center my-4" data-picker-empty hidden>
+                    Aucune image. <a href="{{ url('admin.media') }}" target="_blank" rel="noopener">Importer des images dans la bibliothèque</a>.
+                </p>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-picker-more hidden>Afficher plus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

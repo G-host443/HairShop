@@ -1,0 +1,233 @@
+{# Parcours de réservation, commun à tous les templates. Chaque étape est un lien ou un formulaire classique. #}
+{% set q = state is defined ? state : {} %}
+{% macro url(state, override = {}) %}{% apply spaceless %}
+    {% set s = state|merge(override) %}
+    {% set params = {
+        service: s.service ?? null, variant: s.variant ?? null, length: s.length ?? null,
+        options: (s.options ?? [])|length > 0 ? s.options : null, c: (s.configured ?? false) ? '1' : null,
+        date: s.date ?? null, time: s.time ?? null, mois: s.month ?? null
+    }|filter(v => v is not null) %}
+    /reserver{{ params is not empty ? '?' ~ params|url_encode }}
+{% endapply %}{% endmacro %}
+{% import _self as b %}
+
+<section class="section booking">
+    <div class="container">
+        {% include 'pages/_booking_steps.twig' %}
+
+        {% set all_errors = errors() %}
+        {% if error or all_errors is not empty %}
+            <div class="booking-alert" role="alert">
+                {% if error %}<p>{{ error }}</p>{% endif %}
+                {% for field, messages in all_errors %}{% if field in ['booking', 'service', 'time', 'status'] %}<p>{{ messages|first }}</p>{% endif %}{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="booking-layout{{ summary is defined ? ' has-summary' }}">
+            <div class="booking-main">
+
+                {# ---------- 1. Prestation ---------- #}
+                {% if step == 'service' %}
+                    <h2 class="booking-title">Quelle coiffure souhaitez-vous ?</h2>
+                    {% if categories is empty %}
+                        <p>Aucune prestation n'est réservable pour le moment.</p>
+                    {% endif %}
+                    {% for category in categories %}
+                        <h3 class="booking-subtitle">{{ category.name }}</h3>
+                        <ul class="booking-choices">
+                            {% for s in category.services %}
+                                {% set direct = s.simple is not null and s.option_groups is empty %}
+                                <li><a class="booking-choice" href="{{ b.url({service: s.id, configured: direct}) }}">
+                                    <span class="booking-choice-name">{{ s.name }}</span>
+                                    <span class="booking-choice-meta">
+                                        {% if s.simple %}{{ s.simple.kind == 'quote' ? 'sur devis' : (s.simple.kind == 'from' ? 'à partir de ' : '') ~ (s.simple.kind != 'quote' ? s.simple.price|euros : '') }}
+                                        {% else %}selon taille et longueur{% endif %}
+                                    </span>
+                                </a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+
+                {# ---------- 2. Taille, longueur, options ---------- #}
+                {% elseif step == 'config' %}
+                    <h2 class="booking-title">{{ service.name }}</h2>
+                    {% if service.alert %}<p class="notice">{{ service.alert }}</p>{% endif %}
+                    <form method="get" action="/reserver" class="booking-form">
+                        <input type="hidden" name="service" value="{{ service.id }}">
+                        <input type="hidden" name="c" value="1">
+                        {% if service.simple is null %}
+                            <div class="form-field">
+                                <label for="b-combo">Taille et longueur</label>
+                                <select id="b-combo" name="combo" required>
+                                    <option value="">Choisissez…</option>
+                                    {% for v in service.variants %}
+                                        <optgroup label="Taille {{ v.label }}{{ v.note ? ' — ' ~ v.note }}">
+                                            {% for p in v.prices %}
+                                                {% set value = v.id ~ '-' ~ p.length_id %}
+                                                <option value="{{ value }}"{{ q.variant == v.id and q.length == p.length_id ? ' selected' }}>
+                                                    {{ v.label }} — {{ p.length }} — {{ p.kind == 'quote' ? 'sur devis' : p.price|euros }}
+                                                </option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% else %}
+                            <p class="booking-price-line">{{ service.simple.kind == 'quote' ? 'Sur devis' : (service.simple.kind == 'from' ? 'À partir de ' : '') ~ (service.simple.kind != 'quote' ? service.simple.price|euros : '') }}</p>
+                        {% endif %}
+
+                        {% for group in service.option_groups %}
+                            <fieldset class="pricing-options">
+                                <legend>{{ group.label }}{{ group.selection == 'single' ? ' (une seule au choix)' }}</legend>
+                                {% if group.selection == 'single' and not group.required %}
+                                    <label class="pricing-option"><input type="radio" name="options[g{{ group.id }}]" value=""{{ group.options|filter(o => o.id in q.options) is empty ? ' checked' }}> <span>Non merci</span></label>
+                                {% endif %}
+                                {% for o in group.options %}
+                                    <label class="pricing-option">
+                                        <input type="{{ group.selection == 'single' ? 'radio' : 'checkbox' }}" name="options[{{ group.selection == 'single' ? 'g' ~ group.id : '' }}]" value="{{ o.id }}"{{ o.id in q.options ? ' checked' }}>
+                                        <span>{{ o.name }} <small class="pricing-option-price">{{ o.kind == 'quote' ? 'sur devis' : (o.price ? (o.kind == 'from' ? 'à partir de ' : '') ~ '+' ~ o.price|euros : 'offert') }}</small>
+                                            {% if o.description %}<small class="pricing-option-desc">{{ o.description }}</small>{% endif %}</span>
+                                    </label>
+                                {% endfor %}
+                            </fieldset>
+                        {% endfor %}
+
+                        <div class="booking-actions">
+                            <a class="btn btn-ghost" href="/reserver">Changer de coiffure</a>
+                            <button type="submit" class="btn btn-primary">Choisir la date</button>
+                        </div>
+                    </form>
+
+                {# ---------- 3. Date ---------- #}
+                {% elseif step == 'date' %}
+                    <h2 class="booking-title">Choisissez une date</h2>
+                    {% set cal = calendar %}
+                    <div class="booking-calendar">
+                        <div class="booking-calendar-head">
+                            {% if cal.prev %}<a class="btn btn-ghost btn-sm" href="{{ b.url(q, {month: cal.prev, date: null, time: null}) }}" aria-label="Mois précédent">‹</a>{% else %}<span></span>{% endif %}
+                            <h3 class="booking-calendar-title">{{ (cal.month ~ '-01')|date_fr('month')|capitalize }}</h3>
+                            {% if cal.next %}<a class="btn btn-ghost btn-sm" href="{{ b.url(q, {month: cal.next, date: null, time: null}) }}" aria-label="Mois suivant">›</a>{% else %}<span></span>{% endif %}
+                        </div>
+                        <table class="booking-calendar-grid">
+                            <caption class="visually-hidden">Jours disponibles en {{ (cal.month ~ '-01')|date_fr('month') }}</caption>
+                            <thead><tr>{% for d in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
+                            <tbody>
+                                {% for week in cal.weeks %}
+                                    <tr>
+                                        {% for day in week %}
+                                            <td class="{{ day.in_month ? '' : 'is-outside' }}">
+                                                {% if day.in_month and day.available %}
+                                                    <a class="booking-day is-available{{ q.date == day.date ? ' is-selected' }}" href="{{ b.url(q, {date: day.date, time: null, month: null}) }}" aria-label="{{ day.date|date_fr }}">{{ day.day }}</a>
+                                                {% elseif day.in_month %}
+                                                    <span class="booking-day" aria-label="{{ day.date|date_fr }} : complet ou fermé">{{ day.day }}</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if not cal.has_any %}
+                            <p class="text-muted">Aucun créneau disponible ce mois-ci pour cette durée.{% if cal.next %} <a href="{{ b.url(q, {month: cal.next, date: null}) }}">Voir le mois suivant</a>.{% endif %}</p>
+                        {% endif %}
+                    </div>
+                    <p class="booking-back"><a href="{{ b.url(q, {configured: false, date: null, time: null, month: null}) }}">← Modifier la taille, la longueur ou les options</a></p>
+
+                {# ---------- 4. Créneau ---------- #}
+                {% elseif step == 'time' %}
+                    <h2 class="booking-title">À quelle heure ?</h2>
+                    <p class="booking-lead">{{ q.date|date_fr|capitalize }} · durée estimée {{ summary.duration }}</p>
+                    <ul class="booking-slots">
+                        {% for slot in slots %}
+                            <li><a class="booking-slot" href="{{ b.url(q, {time: slot|date('H:i')}) }}">{{ slot|date_fr('time') }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    <p class="booking-back"><a href="{{ b.url(q, {date: null, time: null, month: q.date|slice(0, 7)}) }}">← Choisir une autre date</a></p>
+
+                {# ---------- 5. Coordonnées ---------- #}
+                {% elseif step == 'details' %}
+                    <h2 class="booking-title">Vos coordonnées</h2>
+                    {% if account %}
+                        <p class="booking-lead">Session ouverte dans votre espace : le rendez-vous y sera enregistré.</p>
+                    {% else %}
+                        <p class="booking-lead">Vous avez un espace ? <a href="{{ login_url }}">Connectez-vous</a> pour retrouver vos informations — ou continuez sans compte.</p>
+                    {% endif %}
+                    <form method="post" action="/reserver" class="booking-form" novalidate>
+                        {{ csrf_field() }}
+                        <input type="hidden" name="service" value="{{ q.service }}">
+                        {% if q.variant %}<input type="hidden" name="variant" value="{{ q.variant }}">{% endif %}
+                        {% if q.length %}<input type="hidden" name="length" value="{{ q.length }}">{% endif %}
+                        {% for o in q.options %}<input type="hidden" name="options[]" value="{{ o }}">{% endfor %}
+                        <input type="hidden" name="c" value="1">
+                        <input type="hidden" name="date" value="{{ q.date }}">
+                        <input type="hidden" name="time" value="{{ q.time }}">
+                        <div class="form-trap" aria-hidden="true"><label for="b-website">Site web</label><input type="text" id="b-website" name="website" tabindex="-1" autocomplete="off"></div>
+
+                        <div class="booking-fields">
+                            {% for f in [
+                                {name: 'first_name', label: 'Prénom', type: 'text', auto: 'given-name'},
+                                {name: 'last_name', label: 'Nom', type: 'text', auto: 'family-name'},
+                                {name: 'email', label: 'Adresse e-mail', type: 'email', auto: 'email', help: 'Pour recevoir la confirmation et le lien de gestion du rendez-vous.'},
+                                {name: 'phone', label: 'Téléphone', type: 'tel', auto: 'tel', help: 'Pour vous joindre en cas d\'imprévu.'},
+                            ] %}
+                                {% set field_errors = errors(f.name) %}
+                                <div class="form-field">
+                                    <label for="b-{{ f.name }}">{{ f.label }} <span aria-hidden="true">*</span></label>
+                                    <input type="{{ f.type }}" id="b-{{ f.name }}" name="{{ f.name }}" value="{{ old(f.name) ?: (account ? account[f.name] : '') }}" autocomplete="{{ f.auto }}" required
+                                           {% if field_errors %}aria-invalid="true" aria-describedby="b-{{ f.name }}-error"{% elseif f.help is defined %}aria-describedby="b-{{ f.name }}-help"{% endif %}>
+                                    {% if field_errors %}<p class="form-error" id="b-{{ f.name }}-error">{{ field_errors|first }}</p>
+                                    {% elseif f.help is defined %}<p class="form-help" id="b-{{ f.name }}-help">{{ f.help }}</p>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-field">
+                            <label for="b-comment">Un mot pour moi ? (facultatif)</label>
+                            <textarea id="b-comment" name="comment" rows="3" maxlength="1000" placeholder="Couleur des mèches, cheveux à défaire, contrainte horaire…">{{ old('comment') }}</textarea>
+                        </div>
+
+                        {% if rules is not empty %}
+                            <div class="booking-rules">
+                                <h3 class="booking-subtitle">À savoir avant de venir</h3>
+                                <ul class="check-list-simple">{% for rule in rules %}<li>{{ rule }}</li>{% endfor %}</ul>
+                            </div>
+                        {% endif %}
+
+                        {% if require_rules %}
+                            {% set rule_errors = errors('rules') %}
+                            <div class="form-field form-check">
+                                <input type="checkbox" id="b-rules" name="rules" value="1" required{% if rule_errors %} aria-invalid="true" aria-describedby="b-rules-error"{% endif %}>
+                                <label for="b-rules">J'ai lu ces informations et j'accepte que le rendez-vous ne soit annulable en ligne que jusqu'à {{ cancellation_hours }} h avant.</label>
+                                {% if rule_errors %}<p class="form-error" id="b-rules-error">{{ rule_errors|first }}</p>{% endif %}
+                            </div>
+                        {% endif %}
+                        <div class="form-field form-check">
+                            <input type="checkbox" id="b-marketing" name="marketing" value="1">
+                            <label for="b-marketing">J'accepte de recevoir des nouvelles et offres (facultatif, désinscription à tout moment).</label>
+                        </div>
+
+                        <div class="booking-actions">
+                            <a class="btn btn-ghost" href="{{ b.url(q, {time: null}) }}">Changer de créneau</a>
+                            <button type="submit" class="btn btn-primary">{{ summary.is_quote ? 'Envoyer ma demande' : 'Confirmer la réservation' }}</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+
+            {# ---------- Récapitulatif ---------- #}
+            {% if summary is defined %}
+                <aside class="booking-summary card" aria-label="Récapitulatif">
+                    <h2 class="booking-subtitle">Votre sélection</h2>
+                    <p class="booking-summary-label">{{ summary.label }}</p>
+                    <dl class="booking-summary-list">
+                        <div><dt>Prix</dt><dd>{{ summary.is_quote ? 'Sur devis' : (summary.is_from ? 'À partir de ' : '') ~ summary.total|euros }}</dd></div>
+                        {% if summary.promotion %}<div class="booking-summary-promo"><dt>Offre</dt><dd>{{ summary.promotion.name }} : −{{ summary.discount|euros }}</dd></div>{% endif %}
+                        <div><dt>Durée estimée</dt><dd>{{ summary.duration }}</dd></div>
+                        {% if summary.when %}<div><dt>Rendez-vous</dt><dd>{{ q.time ? summary.when|date_fr('datetime')|capitalize : summary.when|date_fr|capitalize }}</dd></div>{% endif %}
+                    </dl>
+                    {% if summary.is_quote %}<p class="text-muted">Le prix vous sera confirmé avant le rendez-vous.</p>{% endif %}
+                </aside>
+            {% endif %}
+        </div>
+    </div>
+</section>

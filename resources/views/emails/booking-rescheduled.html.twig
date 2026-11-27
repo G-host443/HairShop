@@ -1,0 +1,9 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}Votre rendez-vous change d'horaire.{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">Nouvel horaire pour votre rendez-vous</h1>
+    <p>Bonjour {{ booking.first_name }},</p>
+    <p>Votre rendez-vous a été déplacé{% if payload.previous_start ?? false %} (il était prévu le {{ payload.previous_start|date_fr('datetime') }}){% endif %}. Voici le nouvel horaire :</p>
+    {% include 'emails/_booking_details.html.twig' %}
+    {% include 'emails/_manage.html.twig' %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% import 'partials/icons.twig' as ui %}
+<section class="section contact contact-buttons" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="contact-title-{{ section.id }}">
+    <div class="container">
+        <div class="contact-panel card reveal">
+            <h2 class="section-title" id="contact-title-{{ section.id }}">{{ title }}</h2>
+            {% if text %}<p class="section-intro">{{ text }}</p>{% endif %}
+
+            {% if channels is not empty %}
+                <ul class="button-row button-row-center">
+                    {% for c in channels %}
+                        <li>
+                            <a class="btn {{ c.primary ? 'btn-primary' : 'btn-ghost' }}" href="{{ c.url }}"{% if c.external %} target="_blank" rel="noopener"{% endif %}>
+                                {{ ui.icon(c.icon, 18) }} {{ c.label }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if hours is not empty %}
+                <dl class="hours hours-inline">
+                    {% for row in hours %}
+                        <div class="hours-row{{ row.closed ? ' is-closed' }}"><dt>{{ row.days }}</dt><dd>{{ row.hours }}</dd></div>
+                    {% endfor %}
+                </dl>
+            {% endif %}
+
+            {% if show_form %}
+                {% include 'sections/_contact_form.twig' %}
+            {% endif %}
+        </div>
+    </div>
+</section>

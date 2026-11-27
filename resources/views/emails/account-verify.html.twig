@@ -1,0 +1,8 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}Un clic pour activer votre espace.{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">Bienvenue, {{ user.firstName }} !</h1>
+    <p>Merci d'avoir créé votre espace. Confirmez votre adresse e-mail pour retrouver aussi les rendez-vous déjà pris avec cette adresse :</p>
+    {% include 'emails/_button.html.twig' with {href: verify_url, label: 'Confirmer mon adresse'} %}
+    <p style="font-size:13px;color:#6D5B54;">Ce lien est valable {{ hours }} heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.</p>
+{% endblock %}

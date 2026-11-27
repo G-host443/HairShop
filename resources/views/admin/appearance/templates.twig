@@ -1,0 +1,42 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.appearance' %}
+{% block title %}Apparence{% endblock %}
+
+{% block content %}
+    {% include 'admin/appearance/_tabs.twig' %}
+
+    <p class="text-secondary">Changer de template ne modifie aucun contenu (pages, prestations, photos). Chaque template garde ses propres réglages : revenir à un ancien template les retrouve.</p>
+
+    <div class="row g-4">
+        {% for t in templates %}
+            <div class="col-md-6 col-xl-4">
+                <div class="admin-card h-100 d-flex flex-column{{ t.is_active ? ' border-primary' }}">
+                    <h2 class="h6 mb-1">{{ t.name }}</h2>
+                    <p class="small text-secondary mb-2">{{ t.slug }}{% if t.version %} · version {{ t.version }}{% endif %}</p>
+                    {% if t.swatches is not empty %}
+                        <div class="admin-swatches mb-2" aria-hidden="true">
+                            {% for color in t.swatches %}<span style="background: {{ color }}"></span>{% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if t.fonts is not empty %}<p class="small text-secondary mb-2">Polices : {{ t.fonts|join(' et ') }}</p>{% endif %}
+                    {% if t.description %}<p class="small">{{ t.description }}</p>{% endif %}
+                    <div class="mt-auto pt-2 d-flex flex-wrap gap-2 align-items-center">
+                        {% if t.is_active %}
+                            <span class="badge text-bg-success">Template actif</span>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.appearance.customize') }}">Personnaliser</a>
+                        {% elseif t.installed %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.appearance.template.preview', {slug: t.slug}) }}"><i class="bi bi-eye" aria-hidden="true"></i> Essayer</a>
+                            <form method="post" action="{{ url('admin.appearance.activate', {slug: t.slug}) }}" data-confirm="Activer le template « {{ t.name }} » ? Le site en ligne changera d'apparence immédiatement.">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-sm btn-primary">Activer</button>
+                            </form>
+                        {% else %}
+                            <span class="badge text-bg-secondary">Bientôt disponible</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

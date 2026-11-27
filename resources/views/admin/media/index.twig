@@ -1,0 +1,145 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.media' %}
+{% block title %}Médias{% endblock %}
+
+{% block actions %}
+    <span class="text-secondary small">{{ total }} fichier{{ total > 1 ? 's' }} · bibliothèque : {{ total_size|filesize }}</span>
+{% endblock %}
+
+{% block content %}
+    {% set base_query = {dossier: filters.folder, type: filters.type, q: filters.q}|filter(v => v is not null and v != '') %}
+
+    <div class="admin-media-layout">
+        {# --- Dossiers --- #}
+        <aside class="admin-card admin-media-folders" aria-label="Dossiers">
+            <h2 class="h6">Dossiers</h2>
+            <ul class="list-unstyled admin-folder-list">
+                <li><a href="{{ url('admin.media') }}" class="{{ filters.folder is null ? 'active' }}"><i class="bi bi-collection" aria-hidden="true"></i> Tous les médias</a></li>
+                <li><a href="{{ url('admin.media', {dossier: 'none'}) }}" class="{{ filters.folder == 'none' ? 'active' }}"><i class="bi bi-inbox" aria-hidden="true"></i> Sans dossier</a></li>
+                {% for folder in folders %}
+                    <li class="depth-{{ min(folder.depth, 4) }}">
+                        <a href="{{ url('admin.media', {dossier: folder.id}) }}" class="{{ filters.folder is same as(folder.id) ? 'active' }}">
+                            <i class="bi bi-folder" aria-hidden="true"></i> {{ folder.name }}
+                            <span class="badge text-bg-light ms-auto">{{ folder.media_count }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <details class="mt-3"{{ errors('name') and not current_folder ? ' open' }}>
+                <summary class="small">Nouveau dossier</summary>
+                <form method="post" action="{{ url('admin.media.folders.store') }}" class="mt-2">
+                    {{ csrf_field() }}
+                    {% if current_folder %}<input type="hidden" name="parent_id" value="{{ current_folder.id }}">{% endif %}
+                    {{ forms.input('name', current_folder ? 'Sous-dossier de « ' ~ current_folder.name ~ ' »' : 'Nom du dossier', {required: true, maxlength: 80, id: 'new-folder-name'}) }}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Créer</button>
+                </form>
+            </details>
+
+            {% if current_folder %}
+                <details class="mt-2">
+                    <summary class="small">Renommer ou supprimer « {{ current_folder.name }} »</summary>
+                    <form method="post" action="{{ url('admin.media.folders.update', {id: current_folder.id}) }}" class="mt-2">
+                        {{ csrf_field() }}
+                        {{ forms.input('name', 'Nom', {required: true, maxlength: 80, value: current_folder.name, id: 'edit-folder-name'}) }}
+                        <div class="mb-3">
+                            <label class="form-label" for="edit-folder-parent">Placer dans</label>
+                            <select class="form-select" id="edit-folder-parent" name="parent_id">
+                                <option value="">(Racine)</option>
+                                {% for folder in folders %}
+                                    {% if folder.id != current_folder.id %}
+                                        <option value="{{ folder.id }}"{{ folder.id == current_folder.parent_id ? ' selected' }}>{{ '— '|repeat(folder.depth) }}{{ folder.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Enregistrer</button>
+                    </form>
+                    <form method="post" action="{{ url('admin.media.folders.destroy', {id: current_folder.id}) }}" class="mt-2"
+                          data-confirm="Supprimer le dossier « {{ current_folder.name }} » et ses sous-dossiers ? Les médias seront conservés, sans dossier.">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-link btn-sm text-danger px-0">Supprimer ce dossier</button>
+                    </form>
+                </details>
+            {% endif %}
+        </aside>
+
+        <div class="admin-media-content">
+            {# --- Import --- #}
+            <form method="post" action="{{ url('admin.media.store') }}" enctype="multipart/form-data" class="admin-dropzone" data-dropzone>
+                {{ csrf_field() }}
+                <input type="hidden" name="folder_id" value="{{ current_folder ? current_folder.id : '' }}">
+                <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                <p class="mb-2"><strong>Glissez vos photos ici</strong> ou</p>
+                <label class="btn btn-primary">
+                    Choisir des fichiers
+                    <input type="file" name="files[]" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm" class="visually-hidden" data-dropzone-input>
+                </label>
+                <noscript><button type="submit" class="btn btn-outline-secondary ms-2">Importer</button></noscript>
+                <p class="small text-secondary mt-2 mb-0">
+                    JPEG, PNG, WebP, GIF, AVIF jusqu'à {{ limits.image_mb }} Mo · MP4, WebM jusqu'à {{ limits.video_mb }} Mo
+                    {% if current_folder %}· importés dans « {{ current_folder.name }} »{% endif %}
+                </p>
+                <ul class="list-unstyled small mt-3 mb-0 text-start" data-dropzone-status aria-live="polite"></ul>
+            </form>
+
+            {# --- Filtres --- #}
+            <form method="get" action="{{ url('admin.media') }}" class="admin-media-filters" role="search">
+                {% if filters.folder is not null %}<input type="hidden" name="dossier" value="{{ filters.folder }}">{% endif %}
+                <label class="visually-hidden" for="media-q">Rechercher</label>
+                <input type="search" class="form-control" id="media-q" name="q" value="{{ filters.q }}" placeholder="Rechercher par nom ou description…">
+                <label class="visually-hidden" for="media-type">Type</label>
+                <select class="form-select" id="media-type" name="type">
+                    <option value="">Tous les types</option>
+                    <option value="image"{{ filters.type == 'image' ? ' selected' }}>Images</option>
+                    <option value="video"{{ filters.type == 'video' ? ' selected' }}>Vidéos</option>
+                </select>
+                <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+            </form>
+
+            {# --- Grille --- #}
+            {% if items is empty %}
+                <p class="text-secondary text-center my-5">Aucun média{{ filters.q ? ' ne correspond à cette recherche' }}.</p>
+            {% else %}
+                <ul class="admin-media-grid list-unstyled">
+                    {% for media in items %}
+                        <li class="admin-media-card">
+                            <a href="{{ url('admin.media.edit', {id: media.id}) }}">
+                                <span class="admin-media-thumb">
+                                    {% if media.isImage %}
+                                        <img src="{{ media.url('thumb') }}" alt="{{ media.altText }}" loading="lazy" width="200" height="200">
+                                    {% else %}
+                                        <i class="bi bi-film" aria-hidden="true"></i>
+                                    {% endif %}
+                                </span>
+                                <span class="admin-media-name">{{ media.originalName }}</span>
+                                <span class="admin-media-meta">
+                                    {% if media.width %}{{ media.width }} × {{ media.height }} · {% endif %}{{ media.humanSize }}
+                                    {% if media.isImage and media.altText == '' %}<span class="text-warning" title="Texte alternatif manquant"><i class="bi bi-exclamation-triangle" aria-label="Texte alternatif manquant"></i></span>{% endif %}
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {% if pages > 1 %}
+                    <nav aria-label="Pagination des médias">
+                        <ul class="pagination justify-content-center">
+                            {% for p in 1..pages %}
+                                <li class="page-item{{ p == page ? ' active' }}">
+                                    <a class="page-link" href="{{ url('admin.media', base_query|merge({page: p})) }}"{% if p == page %} aria-current="page"{% endif %}>{{ p }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-upload.js') }}"></script>
+{% endblock %}

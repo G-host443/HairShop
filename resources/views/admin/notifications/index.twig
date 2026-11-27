@@ -1,0 +1,67 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.notifications' %}
+{% block title %}E-mails{% endblock %}
+
+{% block actions %}
+    <form method="post" action="{{ url('admin.notifications.test') }}">
+        {{ csrf_field() }}
+        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-send" aria-hidden="true"></i> M'envoyer un e-mail de test</button>
+    </form>
+{% endblock %}
+
+{% block content %}
+    {% if driver == 'log' %}
+        <div class="alert alert-warning">
+            <strong>Mode développement :</strong> les e-mails ne sont pas envoyés, ils sont écrits dans <code>storage/logs/mail-AAAA-MM-JJ.log</code>.
+            En production, renseignez <code>MAIL_DRIVER=smtp</code> et <code>MAIL_DSN</code> dans le fichier <code>.env</code>.
+        </div>
+    {% endif %}
+
+    <p class="text-secondary">Confirmations, rappels et alertes envoyés automatiquement. Expéditeur et adresse d'alerte : <a href="{{ url('admin.settings', {group: 'notifications'}) }}">Paramètres › Notifications</a>.</p>
+
+    <nav class="admin-tabs" aria-label="Filtrer par statut">
+        {% for code, label in {'': 'Tous', queued: 'En attente', sent: 'Envoyés', failed: 'En échec', cancelled: 'Annulés'} %}
+            {% set active = (status ?? '') == code %}
+            <a class="admin-tab{{ active ? ' active' }}" href="{{ url('admin.notifications', code ? {statut: code} : {}) }}"{% if active %} aria-current="page"{% endif %}>
+                {{ label }}{% if code %} <span class="badge text-bg-light">{{ counts[code] }}</span>{% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+
+    {% if items is empty %}
+        <div class="admin-card text-center py-5"><p class="mb-0">Aucun e-mail.</p></div>
+    {% else %}
+        <div class="admin-card p-0">
+            <div class="table-responsive">
+                <table class="table admin-table align-middle mb-0">
+                    <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Destinataire</th><th scope="col">Objet</th><th scope="col">Statut</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                        {% for n in items %}
+                            <tr>
+                                <td class="text-nowrap small">{{ n.created_at|date_fr('short') }}<br>{{ n.created_at|date_fr('time') }}</td>
+                                <td>{{ labels[n.event] ?? n.event }}{% if n.reference %}<br><a class="small" href="{{ url('admin.bookings.show', {id: n.booking_id}) }}">{{ n.reference }}</a>{% endif %}</td>
+                                <td class="small">{{ n.recipient }}</td>
+                                <td class="small">{{ n.subject ?: '—' }}</td>
+                                <td>
+                                    {% set color = {queued: '#DFB05E', sent: '#3E7B4F', failed: '#A23B2A', cancelled: '#9A7F73'}[n.status] %}
+                                    <span class="admin-status" style="--status: {{ color }}">{{ {queued: 'En attente', sent: 'Envoyé', failed: 'En échec', cancelled: 'Annulé'}[n.status] }}</span>
+                                    {% if n.error %}<div class="small text-secondary mt-1" title="{{ n.error }}">{{ n.error|length > 90 ? n.error|slice(0, 90) ~ '…' : n.error }}</div>{% endif %}
+                                    {% if n.status == 'queued' and n.attempts > 0 %}<div class="small text-secondary">Essai {{ n.attempts + 1 }} prévu {{ n.scheduled_at|date_fr('time') }}</div>{% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if n.status in ['failed', 'cancelled'] %}
+                                        <form method="post" action="{{ url('admin.notifications.retry', {id: n.id}) }}">
+                                            {{ csrf_field() }}
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Renvoyer</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

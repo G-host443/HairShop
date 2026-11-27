@@ -1,0 +1,13 @@
+<section class="section testimonials" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="reviews-title-{{ section.id }}">
+    <div class="container">
+        <h2 class="section-title" id="reviews-title-{{ section.id }}">{{ title }}</h2>
+        <p>{{ average|number_format(1, ',') }} / 5 · {{ count }} avis</p>
+        <ul class="testimonial-grid">
+            {% for review in reviews %}
+                <li class="testimonial"><p aria-label="Note : {{ review.rating }} sur 5">{{ '★'|repeat(review.rating) }}{{ '☆'|repeat(5 - review.rating) }}</p>
+                    <blockquote><p>{{ review.comment|nl2br }}</p></blockquote><p>{{ review.author }} · {{ review.date|date_fr('month') }}</p></li>
+            {% endfor %}
+        </ul>
+        {% if show_link %}<p class="section-more"><a href="/avis">Lire tous les avis</a></p>{% endif %}
+    </div>
+</section>

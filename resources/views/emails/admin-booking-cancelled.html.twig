@@ -1,0 +1,9 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}Le créneau est de nouveau libre.{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:22px;color:#17140F;">Annulation par la cliente</h1>
+    <p><strong>{{ booking.first_name }} {{ booking.last_name }}</strong> a annulé son rendez-vous du {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}).</p>
+    {% if booking.cancel_reason %}<p style="padding:12px;background:#F6EFDF;border-radius:8px;">{{ booking.cancel_reason }}</p>{% endif %}
+    <p>Le créneau est de nouveau proposé à la réservation.</p>
+    {% include 'emails/_button.html.twig' with {href: admin_url, label: 'Voir le rendez-vous'} %}
+{% endblock %}

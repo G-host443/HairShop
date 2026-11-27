@@ -1,0 +1,17 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}{{ is_confirmed ? 'Votre rendez-vous est confirmé.' : 'Votre demande est bien reçue.' }}{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">{{ is_confirmed ? 'Votre rendez-vous est confirmé' : 'Votre demande est bien reçue' }}</h1>
+    <p>Bonjour {{ booking.first_name }},</p>
+    {% if is_confirmed %}
+        <p>Merci pour votre réservation, à très bientôt !</p>
+    {% else %}
+        <p>Merci pour votre demande. Je la vérifie et je reviens vers vous rapidement pour la confirmer{{ booking.estimated_total is null ? ' avec le prix' }}.</p>
+    {% endif %}
+    {% include 'emails/_booking_details.html.twig' %}
+    {% if rules is not empty %}
+        <p style="margin:16px 0 6px;font-weight:bold;color:#17140F;">À savoir avant de venir</p>
+        <ul style="margin:0;padding-left:18px;font-size:14px;">{% for r in rules %}<li>{{ r }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% include 'emails/_manage.html.twig' %}
+{% endblock %}

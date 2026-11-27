@@ -1,0 +1,52 @@
+{#
+  Formulaire de contact partagé par tous les templates.
+  Classes génériques (form-*, btn) : chaque template les habille dans son CSS.
+#}
+{% set success = flash('contact_success') %}
+{% if success %}
+    <p class="form-success" role="status">{{ success }}</p>
+{% endif %}
+<form class="contact-form" method="post" action="{{ url('contact.send') }}" novalidate>
+    {{ csrf_field() }}
+    <input type="hidden" name="return_to" value="{{ page_path }}">
+
+    {# Champ piège invisible : les robots le remplissent, les humains ne le voient pas. #}
+    <div class="form-trap" aria-hidden="true">
+        <label for="cf-website">Site web</label>
+        <input type="text" id="cf-website" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    {% for field in [
+        {name: 'name', label: 'Nom', type: 'text', autocomplete: 'name', required: true, max: 100},
+        {name: 'email', label: 'Adresse e-mail', type: 'email', autocomplete: 'email', required: true, max: 190},
+        {name: 'phone', label: 'Téléphone (facultatif)', type: 'tel', autocomplete: 'tel', required: false, max: 30},
+    ] %}
+        {% set field_errors = errors(field.name) %}
+        <div class="form-field">
+            <label for="cf-{{ field.name }}">{{ field.label }}{% if field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
+            <input type="{{ field.type }}" id="cf-{{ field.name }}" name="{{ field.name }}" value="{{ old(field.name) }}"
+                   autocomplete="{{ field.autocomplete }}" maxlength="{{ field.max }}" {{ field.required ? 'required' }}
+                   {% if field_errors %}aria-invalid="true" aria-describedby="cf-{{ field.name }}-error"{% endif %}>
+            {% if field_errors %}<p class="form-error" id="cf-{{ field.name }}-error">{{ field_errors|first }}</p>{% endif %}
+        </div>
+    {% endfor %}
+
+    {% set message_errors = errors('message') %}
+    <div class="form-field">
+        <label for="cf-message">Message <span aria-hidden="true">*</span></label>
+        <textarea id="cf-message" name="message" rows="5" maxlength="3000" required
+                  placeholder="Coiffure souhaitée, taille, longueur, vos disponibilités…"
+                  {% if message_errors %}aria-invalid="true" aria-describedby="cf-message-error"{% endif %}>{{ old('message') ?: (prefill_message ?? '') }}</textarea>
+        {% if message_errors %}<p class="form-error" id="cf-message-error">{{ message_errors|first }}</p>{% endif %}
+    </div>
+
+    {% set consent_errors = errors('consent') %}
+    <div class="form-field form-check">
+        <input type="checkbox" id="cf-consent" name="consent" value="1" {{ old('consent') ? 'checked' }} required
+               {% if consent_errors %}aria-invalid="true" aria-describedby="cf-consent-error"{% endif %}>
+        <label for="cf-consent">J'accepte que mes coordonnées soient utilisées pour répondre à ma demande. Elles ne sont jamais transmises à des tiers.</label>
+        {% if consent_errors %}<p class="form-error" id="cf-consent-error">Merci de cocher cette case pour envoyer votre message.</p>{% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Envoyer le message</button>
+</form>

@@ -1,0 +1,196 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.dashboard' %}
+{% block title %}Tableau de bord{% endblock %}
+
+{% macro euros(value) %}{{ value|number_format(value == value|round ? 0 : 2, ',', ' ') }} €{% endmacro %}
+{% import _self as m %}
+
+{% block content %}
+    <p class="text-secondary mb-4">Voici l'essentiel de ce {{ now|date_fr('day') }}.</p>
+
+    {% set tiles = [] %}
+    {% if can('bookings.view') %}
+        {% set tiles = tiles|merge([
+            {label: 'Rendez-vous aujourd\'hui', value: kpis.today, icon: 'calendar-event', url: url('admin.bookings.calendar')},
+            {label: 'Demandes en attente', value: kpis.pending, icon: 'hourglass-split', url: url('admin.bookings') ~ '?statut=pending', alert: kpis.pending > 0},
+            {label: 'Confirmés à venir', value: kpis.upcoming, icon: 'calendar-check', url: url('admin.bookings') ~ '?statut=confirmed'},
+            {label: 'Réservations (total)', value: kpis.total_bookings, icon: 'journal-check', detail: kpis.bookings_this_month ~ ' ce mois-ci'},
+        ]) %}
+    {% endif %}
+    {% if can_stats %}
+        {% set tiles = tiles|merge([
+            {label: 'Chiffre d\'affaires du mois', value: m.euros(kpis.revenue_done), icon: 'cash-coin', detail: '+ ' ~ m.euros(kpis.revenue_expected) ~ ' prévus d\'ici la fin du mois'},
+        ]) %}
+    {% endif %}
+    {% if can('customers.view') %}
+        {% set tiles = tiles|merge([{label: 'Clientes', value: kpis.customers, icon: 'people', url: url('admin.customers'), detail: kpis.new_customers ~ ' nouvelle' ~ (kpis.new_customers > 1 ? 's') ~ ' ce mois-ci'}]) %}
+    {% endif %}
+    {% if can('messages.view') %}
+        {% set tiles = tiles|merge([{label: 'Messages non lus', value: kpis.unread_messages, icon: 'envelope', url: url('admin.messages'), alert: kpis.unread_messages > 0}]) %}
+    {% endif %}
+    {% if can('reviews.moderate') %}
+        {% set tiles = tiles|merge([{label: 'Avis à modérer', value: kpis.pending_reviews, icon: 'star', url: url('admin.reviews'), alert: kpis.pending_reviews > 0}]) %}
+    {% endif %}
+    {% if can_stats %}
+        {% set tiles = tiles|merge([{label: 'Pages vues (30 jours)', value: kpis.views_30d|number_format(0, ',', ' '), icon: 'graph-up'}]) %}
+    {% endif %}
+
+    {% if launch is not empty %}
+        {% set missing = launch|filter(i => i.required and not i.ok)|length %}
+        {% set done = launch|filter(i => i.ok)|length %}
+        <details class="admin-card admin-launch mb-4"{% if missing > 0 %} open{% endif %}>
+            <summary class="d-flex flex-wrap align-items-center gap-2">
+                <span class="h6 mb-0">Mise en route du site</span>
+                {% if missing > 0 %}
+                    <span class="badge text-bg-warning">{{ missing }} point{{ missing > 1 ? 's' }} obligatoire{{ missing > 1 ? 's' }} à régler</span>
+                {% else %}
+                    <span class="badge text-bg-success">Configuration minimale complète</span>
+                {% endif %}
+                <span class="small text-secondary">{{ done }} / {{ launch|length }}</span>
+            </summary>
+            <ul class="list-unstyled admin-launch-list mt-3 mb-0">
+                {% for item in launch %}
+                    <li class="{{ item.ok ? 'is-ok' : (item.required ? 'is-missing' : 'is-optional') }}">
+                        <i class="bi bi-{{ item.ok ? 'check-circle-fill' : (item.required ? 'exclamation-circle-fill' : 'circle') }}" aria-hidden="true"></i>
+                        <span>
+                            {% if item.url and not item.ok %}<a href="{{ item.url }}">{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
+                            <span class="visually-hidden">{{ item.ok ? ' : fait' : (item.required ? ' : obligatoire, à faire' : ' : conseillé') }}</span>
+                            <span class="d-block small text-secondary">{{ item.hint }}</span>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </details>
+    {% endif %}
+
+    <ul class="admin-stats list-unstyled">
+        {% for tile in tiles %}
+            <li class="admin-stat{{ tile.alert ?? false ? ' is-alert' }}">
+                <i class="bi bi-{{ tile.icon }}" aria-hidden="true"></i>
+                <span class="admin-stat-value">{{ tile.value }}</span>
+                <span class="admin-stat-label">
+                    {% if tile.url is defined %}<a href="{{ tile.url }}" class="stretched-link text-reset text-decoration-none">{{ tile.label }}</a>{% else %}{{ tile.label }}{% endif %}
+                    {% if tile.detail is defined %}<span class="d-block small">{{ tile.detail }}</span>{% endif %}
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+
+    {% if can('bookings.view') %}
+        <div class="row g-4 mt-1">
+            <div class="col-xl-6">
+                <section class="admin-card h-100" aria-labelledby="today-title">
+                    <h2 class="h6" id="today-title">Aujourd'hui</h2>
+                    {% if today is empty %}
+                        <p class="text-secondary mb-0">Aucun rendez-vous aujourd'hui.</p>
+                    {% else %}
+                        <ul class="admin-list list-unstyled mb-0">
+                            {% for b in today %}
+                                <li class="admin-list-item">
+                                    <span class="admin-list-main">
+                                        <a href="{{ url('admin.bookings.show', {id: b.id}) }}" class="fw-medium">{{ b.starts_at|date_fr('time') }} – {{ b.ends_at|date_fr('time') }} · {{ b.first_name }} {{ b.last_name }}</a>
+                                        <span class="small text-secondary d-block">{{ b.service_label }}</span>
+                                    </span>
+                                    <span class="admin-status" style="--status: {{ b.status_color }}">{{ b.status_label }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </section>
+            </div>
+            <div class="col-xl-6">
+                <section class="admin-card h-100" aria-labelledby="pending-title">
+                    <h2 class="h6" id="pending-title">Demandes à confirmer</h2>
+                    {% if pending is empty %}
+                        <p class="text-secondary mb-0">Aucune demande en attente.</p>
+                    {% else %}
+                        <ul class="admin-list list-unstyled mb-0">
+                            {% for b in pending %}
+                                <li class="admin-list-item">
+                                    <span class="admin-list-main">
+                                        <a href="{{ url('admin.bookings.show', {id: b.id}) }}" class="fw-medium">{{ b.first_name }} {{ b.last_name }} — {{ b.starts_at|date_fr('datetime') }}</a>
+                                        <span class="small text-secondary d-block">{{ b.service_label }} · demandé le {{ b.created_at|date_fr('short') }}</span>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if charts is not empty %}
+        <div class="row g-4 mt-1" data-dashboard-charts>
+            {% if charts.bookings is defined %}
+                <div class="col-xl-6">
+                    <section class="admin-card h-100" aria-labelledby="chart-bookings-title">
+                        <h2 class="h6" id="chart-bookings-title">Rendez-vous par semaine</h2>
+                        <div class="admin-chart"><canvas data-chart="bookings" role="img" aria-label="Graphique des rendez-vous par semaine ; détail dans le tableau ci-dessous."></canvas></div>
+                        <details class="admin-chart-data">
+                            <summary>Voir les données</summary>
+                            <table class="table table-sm mb-0"><thead><tr><th scope="col">Semaine du</th><th scope="col">Terminés</th><th scope="col">À venir / en cours</th><th scope="col">Annulés</th></tr></thead>
+                                <tbody>{% for w in charts.bookings %}<tr><td>{{ w.label }}</td><td>{{ w.done }}</td><td>{{ w.upcoming }}</td><td>{{ w.cancelled }}</td></tr>{% endfor %}</tbody></table>
+                        </details>
+                    </section>
+                </div>
+            {% endif %}
+            {% if charts.revenue is defined %}
+                <div class="col-xl-6">
+                    <section class="admin-card h-100" aria-labelledby="chart-revenue-title">
+                        <h2 class="h6" id="chart-revenue-title">Chiffre d'affaires par mois</h2>
+                        <div class="admin-chart"><canvas data-chart="revenue" role="img" aria-label="Graphique du chiffre d'affaires par mois ; détail dans le tableau ci-dessous."></canvas></div>
+                        <details class="admin-chart-data">
+                            <summary>Voir les données</summary>
+                            <table class="table table-sm mb-0"><thead><tr><th scope="col">Mois</th><th scope="col">Réalisé</th><th scope="col">Prévu</th></tr></thead>
+                                <tbody>{% for r in charts.revenue %}<tr><td>{{ r.label }}</td><td>{{ m.euros(r.done) }}</td><td>{{ m.euros(r.expected) }}</td></tr>{% endfor %}</tbody></table>
+                        </details>
+                        <p class="small text-secondary mt-2 mb-0">Réalisé : rendez-vous terminés (prix final, sinon estimé). Prévu : rendez-vous à venir ; les prix sur devis ne sont pas comptés.</p>
+                    </section>
+                </div>
+            {% endif %}
+            {% if charts.services is defined %}
+                <div class="col-xl-6">
+                    <section class="admin-card h-100" aria-labelledby="chart-services-title">
+                        <h2 class="h6" id="chart-services-title">Prestations les plus demandées (90 jours)</h2>
+                        {% if charts.services is empty %}
+                            <p class="text-secondary mb-0">Pas encore de réservation sur la période.</p>
+                        {% else %}
+                            <div class="admin-chart"><canvas data-chart="services" role="img" aria-label="Graphique des prestations les plus demandées ; détail dans le tableau ci-dessous."></canvas></div>
+                            <details class="admin-chart-data">
+                                <summary>Voir les données</summary>
+                                <table class="table table-sm mb-0"><thead><tr><th scope="col">Prestation</th><th scope="col">Réservations</th></tr></thead>
+                                    <tbody>{% for s in charts.services %}<tr><td>{{ s.name }}</td><td>{{ s.count }}</td></tr>{% endfor %}</tbody></table>
+                            </details>
+                        {% endif %}
+                    </section>
+                </div>
+            {% endif %}
+            {% if charts.visits is defined %}
+                <div class="col-xl-6">
+                    <section class="admin-card h-100" aria-labelledby="chart-visits-title">
+                        <h2 class="h6" id="chart-visits-title">Fréquentation (pages vues, 30 jours)</h2>
+                        <div class="admin-chart"><canvas data-chart="visits" role="img" aria-label="Graphique des pages vues par jour ; pages les plus vues ci-dessous."></canvas></div>
+                        {% if top_pages is not empty %}
+                            <details class="admin-chart-data">
+                                <summary>Pages les plus vues</summary>
+                                <table class="table table-sm mb-0"><thead><tr><th scope="col">Page</th><th scope="col">Vues</th></tr></thead>
+                                    <tbody>{% for p in top_pages %}<tr><td><a href="{{ p.path }}" target="_blank" rel="noopener">{{ p.path }}</a></td><td>{{ p.views }}</td></tr>{% endfor %}</tbody></table>
+                            </details>
+                        {% endif %}
+                        <p class="small text-secondary mt-2 mb-0">Compteur anonyme, sans cookie : ni adresse IP ni identifiant ne sont enregistrés. Les robots et l'administration ne sont pas comptés.</p>
+                    </section>
+                </div>
+            {% endif %}
+        </div>
+        <script type="application/json" data-dashboard-data>{{ charts_json|raw }}</script>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {% if charts is not empty %}
+        <script src="{{ asset('assets/vendor/chartjs/chart.umd.min.js') }}"></script>
+        <script src="{{ asset('assets/js/admin-dashboard.js') }}"></script>
+    {% endif %}
+{% endblock %}

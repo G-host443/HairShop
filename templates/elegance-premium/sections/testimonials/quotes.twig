@@ -1,0 +1,23 @@
+{# Grandes citations sur une colonne, sans cartes. #}
+<section class="section testimonials testimonials-quotes" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="reviews-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="reviews-title-{{ section.id }}">{{ title }}</h2>
+            <p class="section-intro">{{ average|number_format(1, ',') }} / 5 · {{ count }} avis</p>
+        </header>
+        <ul class="quote-list">
+            {% for review in reviews|slice(0, 3) %}
+                <li class="quote reveal">
+                    <blockquote><p>{{ review.comment|nl2br }}</p></blockquote>
+                    <p class="quote-author">
+                        <span class="quote-stars" aria-label="Note : {{ review.rating }} sur 5">{{ '★'|repeat(review.rating) }}</span>
+                        {{ review.author }}{% if review.service %}<span class="quote-meta"> — {{ review.service }}</span>{% endif %}
+                    </p>
+                </li>
+            {% endfor %}
+        </ul>
+        {% if show_link %}
+            <p class="section-more reveal"><a class="btn btn-ghost" href="/avis">Lire tous les avis</a></p>
+        {% endif %}
+    </div>
+</section>

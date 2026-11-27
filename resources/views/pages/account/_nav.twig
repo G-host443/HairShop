@@ -1,0 +1,13 @@
+<nav class="account-nav" aria-label="Mon espace">
+    {% for key, item in {
+        bookings: {href: '/compte', label: 'Mes rendez-vous'},
+        favorites: {href: '/compte/favoris', label: 'Mes favoris'},
+        profile: {href: '/compte/profil', label: 'Mon profil'},
+    } %}
+        <a class="chip" href="{{ item.href }}"{% if tab == key %} aria-current="page" aria-pressed="true"{% endif %}>{{ item.label }}</a>
+    {% endfor %}
+    <form method="post" action="/compte/deconnexion" class="account-logout">
+        {{ csrf_field() }}
+        <button type="submit" class="btn btn-ghost btn-sm">Se déconnecter</button>
+    </form>
+</nav>

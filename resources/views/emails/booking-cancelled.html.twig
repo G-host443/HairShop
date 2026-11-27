@@ -1,0 +1,10 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}Votre rendez-vous est annulé.{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">Rendez-vous annulé</h1>
+    <p>Bonjour {{ booking.first_name }},</p>
+    <p>Votre rendez-vous du {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}, réf. {{ booking.reference }}) est annulé.</p>
+    {% if payload.note ?? false %}<p style="padding:12px;background:#F6EFDF;border-radius:8px;">{{ payload.note }}</p>{% endif %}
+    <p>Au plaisir de vous recevoir une prochaine fois :</p>
+    {% include 'emails/_button.html.twig' with {href: base_url ~ '/reserver', label: 'Reprendre rendez-vous'} %}
+{% endblock %}

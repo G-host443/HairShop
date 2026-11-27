@@ -1,0 +1,12 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+J'espère que votre {{ booking.service_label|lower }} vous plaît. Votre avis m'aide beaucoup et guide les prochaines clientes : il ne prend qu'une minute.
+
+{% if manage_url %}Laisser mon avis : {{ manage_url }}#avis
+(Lien personnel. Votre avis sera publié après relecture, avec le nom que vous choisirez.)
+{% endif %}
+
+À bientôt,
+{{ site_name }}
+{% endautoescape %}

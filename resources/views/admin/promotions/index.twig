@@ -1,0 +1,40 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.promotions' %}
+{% block title %}Promotions{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-primary" href="{{ url('admin.promotions.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Nouvelle promotion</a>
+{% endblock %}
+
+{% block content %}
+    <p class="text-secondary">Une promotion en cours réduit automatiquement le prix affiché et le prix enregistré à la réservation. Une fois terminée, elle disparaît du site toute seule.</p>
+
+    <div class="admin-card">
+        {% if promotions is empty %}
+            <p class="text-secondary mb-0">Aucune promotion pour l'instant.</p>
+        {% else %}
+            <ul class="admin-list list-unstyled mb-0">
+                {% for p in promotions %}
+                    {% set status = status_labels[p.status] %}
+                    <li class="admin-list-item{{ p.status in ['expired', 'disabled'] ? ' is-muted' }}">
+                        <span class="admin-list-main">
+                            <a href="{{ url('admin.promotions.edit', {id: p.id}) }}" class="fw-medium">{{ p.name }}</a>
+                            <span class="small text-secondary d-block">
+                                {{ p.badge }} · du {{ p.first_day|date_fr('short') }} au {{ p.last_day|date_fr('short') }} · {{ p.services_count }} prestation{{ p.services_count > 1 ? 's' }}
+                            </span>
+                        </span>
+                        <span class="admin-list-badges"><span class="badge text-bg-{{ status[1] }}">{{ status[0] }}</span></span>
+                        <span class="admin-list-actions">
+                            <form method="post" action="{{ url('admin.promotions.toggle', {id: p.id}) }}">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">{{ p.is_active ? 'Désactiver' : 'Activer' }}</button>
+                            </form>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.promotions.edit', {id: p.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden"> Modifier {{ p.name }}</span></a>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+{% endblock %}

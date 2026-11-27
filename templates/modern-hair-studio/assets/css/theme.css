@@ -1,0 +1,57 @@
+/*
+ * Template « Modern Hair Studio » : typographie forte, capitales, asymétrie, contrastes francs.
+ * Les avis et l'appel à l'action passent sur des bandeaux sombres. Se superpose au socle commun.
+ */
+
+body { font-size: 1.05rem; }
+h1, h2, h3 { font-weight: 400; letter-spacing: -.015em; }
+
+/* En-tête : barre nette, nom en capitales grasses */
+.site-header { background: var(--color-bg); border-bottom: 2px solid var(--color-heading); }
+.site-header.is-scrolled { border-bottom-color: var(--color-heading); box-shadow: none; }
+.brand-name { font-family: var(--font-body); font-weight: 800; font-size: 1.15rem; letter-spacing: .06em; text-transform: uppercase; color: var(--color-heading); }
+.brand-logo { border-radius: 6px; }
+.site-nav a { text-transform: uppercase; font-size: .85rem; letter-spacing: .1em; font-weight: 600; }
+.site-nav a::after { height: 3px; background: var(--color-accent); }
+.nav-toggle { border-radius: 6px; }
+
+/* Boutons */
+.btn { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .9rem; }
+.btn-primary { box-shadow: 4px 4px 0 var(--color-heading); }
+.btn-primary:hover { box-shadow: 2px 2px 0 var(--color-heading); transform: translate(2px, 2px); }
+.btn-ghost { border-width: 2px; border-color: var(--color-heading); }
+.chip { border-radius: 6px; font-weight: 600; }
+
+/* Titres de section alignés à gauche, avec numéro décoratif */
+.section-header { text-align: left; margin-left: 0; }
+.section-title { font-size: clamp(2.4rem, 5.5vw, 3.8rem); text-transform: none; }
+.section-header .section-title::before {
+    content: ""; display: block; width: 3.5rem; height: 6px; background: var(--color-accent); margin-bottom: 1rem;
+}
+.card { border-width: 2px; border-color: var(--color-heading); box-shadow: 6px 6px 0 rgb(var(--color-heading-rgb) / .9); }
+
+/* Hero asymétrique */
+.hero-bold { padding-block: clamp(3rem, 8vw, 7rem); overflow: hidden; }
+.hero-bold-inner { display: grid; gap: 3rem; align-items: center; }
+@media (min-width: 900px) { .hero-bold-inner { grid-template-columns: 1.3fr .7fr; } }
+.hero-bold .hero-title { font-size: clamp(2.2rem, 8vw, 6.2rem); hyphens: auto; overflow-wrap: break-word; line-height: .95; text-transform: uppercase; font-family: var(--font-body); font-weight: 800; letter-spacing: -.02em; }
+.hero-bold .hero-eyebrow { font-family: var(--font-body); font-size: .9rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--color-accent-dark); }
+.hero-bold-visual { position: relative; justify-self: center; width: min(78vw, 360px); }
+.hero-bold-block { position: absolute; inset: 18% -12% -10% 22%; background: var(--color-accent); border-radius: var(--radius-card); }
+.hero-bold-frame { position: relative; aspect-ratio: 4 / 5; border: 2px solid var(--color-heading); border-radius: var(--radius-image); background: var(--color-surface); overflow: hidden; display: grid; place-items: center; }
+.hero-bold-frame img { width: 100%; height: 100%; object-fit: cover; }
+.hero-bold-frame.is-logo img { object-fit: contain; padding: 16%; }
+.hero-bold-monogram { font-family: var(--font-heading); font-size: clamp(7rem, 20vw, 11rem); color: var(--color-heading); line-height: 1; }
+
+/* Bandeaux sombres : avis et appel à l'action */
+.testimonials, .cta-banner { background: var(--color-heading) !important; color: #EDEAE4; }
+.testimonials .section-title, .cta-banner h2, .cta-banner p, .testimonials .testimonial-author { color: #FFFFFF; }
+.testimonials .section-intro, .testimonials .testimonial-meta { color: #CFC9C1; }
+.testimonials .card { background: #232220; border-color: #4A4642; box-shadow: none; color: #EDEAE4; }
+.testimonials .stars-text, .testimonials .stars .is-on { color: var(--color-accent); }
+.testimonials a:not(.btn) { color: var(--color-accent-light); }
+.testimonials .btn-ghost, .cta-banner .btn-ghost { color: #FFFFFF; border-color: #FFFFFF; }
+.testimonials .btn-ghost:hover, .cta-banner .btn-ghost:hover { background: #FFFFFF; color: var(--color-heading); }
+
+/* Galerie : bords nets, légende en capitales */
+.gallery-item figcaption { text-transform: uppercase; letter-spacing: .06em; font-size: .85rem; font-weight: 600; }

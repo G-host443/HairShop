@@ -1,0 +1,122 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.bookings' %}
+{% block title %}Rendez-vous {{ booking.reference }}{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-outline-secondary" href="{{ url('admin.bookings.calendar', {vue: 'jour', date: local_start|date('Y-m-d')}) }}"><i class="bi bi-calendar3" aria-hidden="true"></i> Voir la journée</a>
+{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="admin-card mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <p class="h4 mb-1">{{ booking.starts_at|date_fr('datetime')|capitalize }}</p>
+                        <p class="text-secondary mb-0">Fin estimée {{ booking.ends_at|date_fr('time') }}</p>
+                    </div>
+                    <span class="admin-status admin-status-lg" style="--status: {{ booking.status_color }}">{{ booking.status_label }}</span>
+                </div>
+                <dl class="admin-meta">
+                    <dt>Prestation</dt><dd>{{ booking.service_label }}</dd>
+                    {% if options is not empty %}<dt>Options</dt><dd>{% for o in options %}{{ o.label }} ({{ o.price is null ? 'devis' : (o.price == 0 ? 'offert' : '+' ~ o.price|euros) }}){{ not loop.last ? ', ' }}{% endfor %}</dd>{% endif %}
+                    <dt>Prix estimé</dt><dd>{{ booking.estimated_total is not null ? booking.estimated_total|euros : 'Sur devis' }}{% if booking.discount_amount > 0 %} <span class="small text-secondary">(promotion : −{{ booking.discount_amount|euros }})</span>{% endif %}</dd>
+                    <dt>Prix final</dt><dd>{{ booking.final_total is not null ? booking.final_total|euros : '—' }}</dd>
+                    <dt>Origine</dt><dd>{{ {web: 'Site', admin: 'Saisie manuelle', phone: 'Téléphone', whatsapp: 'WhatsApp'}[booking.source] ?? booking.source }}</dd>
+                    <dt>Créé le</dt><dd>{{ booking.created_at|date_fr('datetime') }}</dd>
+                    {% if booking.customer_comment %}<dt>Message</dt><dd>{{ booking.customer_comment|nl2br }}</dd>{% endif %}
+                    {% if booking.cancel_reason %}<dt>Annulation</dt><dd>{{ booking.cancel_reason }}</dd>{% endif %}
+                </dl>
+            </div>
+
+            <div class="admin-card mb-4">
+                <h2 class="h6">Cliente</h2>
+                <p class="mb-1 fw-medium">{{ booking.first_name }} {{ booking.last_name }}</p>
+                {% if booking.phone %}<p class="mb-1"><a href="tel:{{ booking.phone|replace({' ': '', '.': ''}) }}"><i class="bi bi-telephone" aria-hidden="true"></i> {{ booking.phone }}</a></p>{% endif %}
+                {% if booking.email %}<p class="mb-0"><a href="mailto:{{ booking.email }}"><i class="bi bi-envelope" aria-hidden="true"></i> {{ booking.email }}</a></p>{% endif %}
+                {% if whatsapp_url %}
+                    <a class="btn btn-sm btn-outline-secondary mt-3" href="{{ whatsapp_url }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp" aria-hidden="true"></i> Écrire sur WhatsApp</a>
+                {% endif %}
+            </div>
+
+            <div class="admin-card mb-4">
+                <h2 class="h6">E-mails</h2>
+                {% if notifications is empty %}
+                    <p class="small text-secondary mb-0">{{ booking.email ? 'Aucun e-mail pour ce rendez-vous.' : 'Pas d\'adresse e-mail : aucune notification automatique.' }}</p>
+                {% else %}
+                    <ul class="admin-history list-unstyled mb-0">
+                        {% for n in notifications %}
+                            <li>
+                                <strong>{{ notification_labels[n.event] ?? n.event }}</strong> → {{ n.recipient }}
+                                <span class="small text-secondary">— {{ {queued: 'en attente', sent: 'envoyé le ' ~ (n.sent_at ? n.sent_at|date_fr('short') ~ ' à ' ~ n.sent_at|date_fr('time') : ''), failed: 'échec', cancelled: 'annulé'}[n.status] }}</span>
+                                {% if n.error and n.status != 'sent' %}<div class="small text-danger">{{ n.error }}</div>{% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="admin-card">
+                <h2 class="h6">Historique</h2>
+                <ol class="admin-history list-unstyled mb-0">
+                    {% for h in history %}
+                        <li><span class="text-secondary small">{{ h.changed_at|date_fr('short') }} {{ h.changed_at|date_fr('time') }}</span> —
+                            <strong>{{ h.from_status == h.to_status ? 'Modification' : h.to_label }}</strong>{% if h.note %} : {{ h.note }}{% endif %}
+                            {% if h.user_name %}<span class="text-secondary small">({{ h.user_name }})</span>{% endif %}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+
+        {% if can_manage %}
+            <div class="col-lg-5">
+                {% if next_statuses is not empty %}
+                    <form method="post" action="{{ url('admin.bookings.status', {id: booking.id}) }}" class="admin-card mb-4">
+                        {{ csrf_field() }}
+                        <h2 class="h6">Changer le statut</h2>
+                        <label class="form-label small" for="s-note">Note (facultatif, motif d'annulation…)</label>
+                        <input class="form-control form-control-sm mb-3" id="s-note" name="note" maxlength="300">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for status, label in next_statuses %}
+                                <button type="submit" name="status" value="{{ status }}" class="btn btn-sm {{ status == 'confirmed' or status == 'completed' ? 'btn-primary' : (status in ['cancelled', 'refused'] ? 'btn-outline-danger' : 'btn-outline-secondary') }}">{{ label }}</button>
+                            {% endfor %}
+                        </div>
+                    </form>
+                {% endif %}
+
+                <form method="post" action="{{ url('admin.bookings.price', {id: booking.id}) }}" class="admin-card mb-4" novalidate>
+                    {{ csrf_field() }}
+                    <h2 class="h6">Prix final</h2>
+                    <div class="input-group input-group-sm has-validation">
+                        <input class="form-control{{ errors('final_total') ? ' is-invalid' }}" name="final_total" inputmode="decimal" aria-label="Prix final en euros"
+                               value="{{ old('final_total', booking.final_total is not null ? booking.final_total|number_format(2, ',', '') : '') }}" placeholder="{{ booking.estimated_total is not null ? booking.estimated_total|number_format(2, ',', '') : 'Montant' }}">
+                        <span class="input-group-text">€</span>
+                        <button type="submit" class="btn btn-outline-secondary">Enregistrer</button>
+                        {% if errors('final_total') %}<div class="invalid-feedback">{{ errors('final_total')|first }}</div>{% endif %}
+                    </div>
+                    <p class="form-text mb-0">À renseigner pour une prestation sur devis ou un supplément.</p>
+                </form>
+
+                {% if is_active %}
+                    <form method="post" action="{{ url('admin.bookings.reschedule', {id: booking.id}) }}" class="admin-card" novalidate>
+                        {{ csrf_field() }}
+                        <h2 class="h6">Déplacer le rendez-vous</h2>
+                        <div class="row g-2">
+                            <div class="col-7"><label class="form-label small" for="r-date">Date</label>
+                                <input type="date" class="form-control form-control-sm" id="r-date" name="date" value="{{ old('date', local_start|date('Y-m-d')) }}" required></div>
+                            <div class="col-5"><label class="form-label small" for="r-time">Heure</label>
+                                <input type="time" class="form-control form-control-sm{{ errors('time') ? ' is-invalid' }}" id="r-time" name="time" value="{{ old('time', local_start|date('H:i')) }}" step="900" required></div>
+                        </div>
+                        {% if errors('time') %}<p class="text-danger small mt-2 mb-0">{{ errors('time')|first }}</p>{% endif %}
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="r-force" name="force" value="1">
+                            <label class="form-check-label small" for="r-force">Ignorer les horaires d'ouverture</label>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Déplacer</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

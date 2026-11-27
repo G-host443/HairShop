@@ -1,0 +1,8 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+Bonne nouvelle : votre rendez-vous est confirmé. À très bientôt !
+
+{% include 'emails/_booking_details.txt.twig' %}
+{% include 'emails/_manage.txt.twig' %}
+{% endautoescape %}

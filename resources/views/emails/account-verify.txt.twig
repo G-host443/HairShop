@@ -1,0 +1,10 @@
+{% autoescape false %}
+Bienvenue, {{ user.firstName }} !
+
+Merci d'avoir créé votre espace. Confirmez votre adresse e-mail (lien valable {{ hours }} heures) :
+{{ verify_url }}
+
+Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.
+
+— {{ site_name }}
+{% endautoescape %}

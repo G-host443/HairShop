@@ -1,0 +1,44 @@
+{
+    "slug": "afro-natural",
+    "name": "Afro Hair & Natural Beauty",
+    "version": "1.0.0",
+    "description": "Une colonne chaleureuse aux tons crème et doré, titres en serif raffiné et touches manuscrites. La grille de tarifs suit directement l'accueil.",
+    "tokens": {
+        "color.bg": "#F6EFDF",
+        "color.surface": "#FAF8F5",
+        "color.surface-alt": "#EDE4D3",
+        "color.border": "#D9CFBF",
+        "color.accent": "#DFB05E",
+        "color.accent-light": "#F3D89B",
+        "color.accent-dark": "#806217",
+        "color.text": "#5A4A44",
+        "color.text-muted": "#6D5B54",
+        "color.heading": "#17140F",
+        "color.on-accent": "#17140F",
+        "font.heading": "Cormorant Garamond",
+        "font.body": "Jost",
+        "font.script": "Parisienne",
+        "radius.card": "18px",
+        "radius.image": "14px",
+        "radius.button": "40px",
+        "space.section": "96px",
+        "size.container": "1120px",
+        "motion.level": "subtle"
+    },
+    "layout": {
+        "header": ["sticky", "static"]
+    },
+    "sections": {
+        "hero": ["split-logo", "centered"],
+        "pricing_grid": ["chips"],
+        "gallery": ["grid", "masonry"],
+        "practical_info": ["three-columns"],
+        "testimonials": ["cards"],
+        "promotions": ["cards"],
+        "blog_latest": ["cards"],
+        "contact": ["buttons", "form"],
+        "cta": ["banner"],
+        "rich_text": ["prose"]
+    },
+    "home_preset": ["hero", "pricing_grid", "gallery", "practical_info", "testimonials", "contact"]
+}

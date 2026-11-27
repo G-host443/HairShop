@@ -1,0 +1,126 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.pages' %}
+{% set content = section.content %}
+{% block title %}{{ type_label }}{% endblock %}
+
+{% block content %}
+    <p class="mb-3">
+        <a href="{{ url('admin.pages.edit', {id: page.id}) }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ page.title }}</a>
+    </p>
+
+    <form method="post" action="{{ url('admin.pages.sections.update', {id: page.id, sectionId: section.id}) }}" class="admin-card admin-section-form" novalidate>
+        {{ csrf_field() }}
+        <p class="small text-secondary">
+            {% if section.is_new %}Section nouvelle : elle apparaîtra sur le site à la publication de la page.
+            {% else %}Les modifications restent en brouillon jusqu'à la publication de la page.{% endif %}
+        </p>
+
+        {% if variants|length > 1 %}
+            <div class="mb-4">
+                <span class="form-label d-block">Présentation</span>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for v in variants %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="variant" id="variant-{{ v }}" value="{{ v }}"{{ old('variant', current_variant ?? variants|first) == v ? ' checked' }}>
+                            <label class="form-check-label" for="variant-{{ v }}">{{ variant_labels[v] ?? v|replace({'-': ' '})|capitalize }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text">Variantes proposées par le template actif.</div>
+            </div>
+        {% endif %}
+
+        {% for name, field in fields %}
+            {% set id = 'f-' ~ name %}
+            {% set field_errors = errors(name) %}
+            {% set value = old(name, content[name] ?? (field.default ?? '')) %}
+
+            {% if field.type == 'bool' %}
+                <div class="form-check mb-3">
+                    <input type="hidden" name="{{ name }}" value="0">
+                    <input class="form-check-input" type="checkbox" id="{{ id }}" name="{{ name }}" value="1"{{ value and value != '0' ? ' checked' }}>
+                    <label class="form-check-label" for="{{ id }}">{{ field.label }}</label>
+                </div>
+
+            {% elseif field.type == 'link' %}
+                {% set link = value is iterable ? value : {} %}
+                <fieldset class="mb-3">
+                    <legend class="form-label">{{ field.label }}</legend>
+                    <div class="row g-2">
+                        <div class="col-sm-5">
+                            <label class="visually-hidden" for="{{ id }}-label">{{ field.label }} : texte</label>
+                            <input type="text" class="form-control{{ field_errors ? ' is-invalid' }}" id="{{ id }}-label" name="{{ name }}[label]" value="{{ link.label ?? '' }}" maxlength="60" placeholder="Texte du bouton">
+                        </div>
+                        <div class="col-sm-7">
+                            <label class="visually-hidden" for="{{ id }}-target">{{ field.label }} : destination</label>
+                            <input type="text" class="form-control{{ field_errors ? ' is-invalid' }}" id="{{ id }}-target" name="{{ name }}[target]" value="{{ link.target ?? '' }}" maxlength="500" placeholder="#tarifs, /contact, https://…">
+                        </div>
+                    </div>
+                    {% for m in field_errors %}<div class="text-danger small mt-1">{{ m }}</div>{% endfor %}
+                </fieldset>
+
+            {% elseif field.type == 'media' %}
+                {% set image = images[name] ?? null %}
+                <span class="form-label d-block" id="{{ id }}-label">{{ field.label }}</span>
+                <div class="admin-media-field mb-3" data-media-field>
+                    <input type="hidden" name="{{ name }}" value="{{ image ? image.id : '' }}" data-media-input>
+                    <div class="admin-media-field-preview" data-media-preview>
+                        {% if image %}<img src="{{ image.url('thumb') }}" alt="{{ image.altText }}">{% else %}<span class="text-secondary small">Aucune image</span>{% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="{{ id }}-label">Choisir dans la bibliothèque</button>
+                        <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ image ? '' : ' hidden' }}>Retirer</button>
+                    </div>
+                    {% for m in field_errors %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+                </div>
+
+            {% else %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ id }}">{{ field.label }}</label>
+                    {% if field.type == 'richtext' %}
+                        <div class="admin-markup-toolbar btn-toolbar gap-1 mb-1" role="toolbar" aria-label="Mise en forme" data-markup-toolbar="{{ id }}" hidden>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-markup="bold" title="Gras"><i class="bi bi-type-bold" aria-hidden="true"></i><span class="visually-hidden">Gras</span></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-markup="italic" title="Italique"><i class="bi bi-type-italic" aria-hidden="true"></i><span class="visually-hidden">Italique</span></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-markup="heading" title="Intertitre"><i class="bi bi-type-h3" aria-hidden="true"></i><span class="visually-hidden">Intertitre</span></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-markup="list" title="Liste"><i class="bi bi-list-ul" aria-hidden="true"></i><span class="visually-hidden">Liste à puces</span></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-markup="link" title="Lien"><i class="bi bi-link-45deg" aria-hidden="true"></i><span class="visually-hidden">Lien</span></button>
+                        </div>
+                    {% endif %}
+                    {% if field.type in ['textarea', 'richtext'] %}
+                        <textarea class="form-control{{ field_errors ? ' is-invalid' }}" id="{{ id }}" name="{{ name }}" rows="{{ field.type == 'richtext' ? 14 : 4 }}"{% if field.max is defined %} maxlength="{{ field.max }}"{% endif %}{% if field.type == 'richtext' or field.help is defined %} aria-describedby="{{ id }}-help"{% endif %}>{{ value }}</textarea>
+                    {% elseif field.type == 'int' %}
+                        <input type="number" class="form-control{{ field_errors ? ' is-invalid' }}" id="{{ id }}" name="{{ name }}" value="{{ value }}" min="{{ field.min ?? 1 }}" max="{{ field.max ?? 100 }}" style="max-width: 10rem">
+                    {% else %}
+                        <input type="text" class="form-control{{ field_errors ? ' is-invalid' }}" id="{{ id }}" name="{{ name }}" value="{{ value }}"
+                            {% if field.type == 'anchor' %}maxlength="41" pattern="[a-z][a-z0-9-]*" aria-describedby="{{ id }}-help"{% elseif field.max is defined %}maxlength="{{ field.max }}"{% endif %}
+                            {% if field.help is defined %}aria-describedby="{{ id }}-help"{% endif %}>
+                    {% endif %}
+                    {% for m in field_errors %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                    {% if field.type == 'richtext' %}
+                        <div class="form-text" id="{{ id }}-help">
+                            Ligne vide = nouveau paragraphe. <code>## Intertitre</code>, <code>- élément de liste</code>, <code>**gras**</code>, <code>*italique*</code>, <code>[texte](/contact)</code>.
+                        </div>
+                    {% elseif field.type == 'anchor' %}
+                        <div class="form-text" id="{{ id }}-help">Ex. <code>tarifs</code> : la section devient accessible par /#tarifs et apparaît dans le menu de l'accueil.</div>
+                    {% elseif field.help is defined %}
+                        <div class="form-text" id="{{ id }}-help">{{ field.help }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="d-flex flex-wrap gap-2 pt-2">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <button type="submit" class="btn btn-outline-primary" name="then" value="page">Enregistrer et revenir à la page</button>
+            <a class="btn btn-link" href="{{ url('admin.pages.preview', {id: page.id}) }}">Aperçu de la page</a>
+        </div>
+    </form>
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-markup.js') }}"></script>
+{% endblock %}

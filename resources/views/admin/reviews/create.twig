@@ -1,0 +1,33 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.reviews' %}
+{% block title %}Ajouter un avis reçu ailleurs{% endblock %}
+
+{% block content %}
+    <p class="mb-3"><a href="{{ url('admin.reviews') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Tous les avis</a></p>
+
+    <form method="post" action="{{ url('admin.reviews.store') }}" class="admin-card" style="max-width: 44rem" novalidate>
+        {{ csrf_field() }}
+        <p class="text-secondary small">Pour un avis reçu par WhatsApp, Instagram ou de vive voix : recopiez-le fidèlement, avec l'accord de la cliente. Il est publié directement.</p>
+        {{ forms.input('author_name', 'Nom affiché', {required: true, maxlength: 60, help: 'Ex. « Awa D. »'}) }}
+        <fieldset class="mb-3">
+            <legend class="form-label">Note</legend>
+            <div class="d-flex gap-3">
+                {% for n in 5..1 %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="rating" id="rating-{{ n }}" value="{{ n }}"{{ old('rating', '5') == n ? ' checked' }}>
+                        <label class="form-check-label" for="rating-{{ n }}">{{ n }} ★</label>
+                    </div>
+                {% endfor %}
+            </div>
+            {% for m in errors('rating') %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+        </fieldset>
+        <div class="mb-3">
+            <label class="form-label" for="f-comment">Avis</label>
+            <textarea class="form-control{{ errors('comment') ? ' is-invalid' }}" id="f-comment" name="comment" rows="5" maxlength="1500">{{ old('comment') }}</textarea>
+            {% for m in errors('comment') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Publier l'avis</button>
+    </form>
+{% endblock %}

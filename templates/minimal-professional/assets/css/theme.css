@@ -1,0 +1,64 @@
+/*
+ * Template « Minimal Professional » : sobre, aéré, une seule police, aucun ornement.
+ * Les tarifs s'affichent en tableau. Se superpose au socle commun (site.css).
+ */
+
+body { font-size: 1rem; line-height: 1.6; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+
+/* En-tête : sobre, nom en gras */
+.site-header { background: rgb(var(--color-bg-rgb) / .97); border-bottom-color: var(--color-border); }
+.brand-name { font-family: var(--font-body); font-weight: 700; font-size: 1.1rem; letter-spacing: -.01em; color: var(--color-heading); }
+.brand-logo { border-radius: 8px; }
+.site-nav a { font-size: .95rem; font-weight: 500; color: var(--color-text); }
+.site-nav a::after { display: none; }
+.site-nav a:hover { color: var(--color-accent); }
+.nav-toggle { border-radius: 8px; }
+
+/* Boutons et pastilles plus compacts */
+.btn { min-height: 44px; padding: .65rem 1.25rem; font-weight: 600; font-size: .95rem; }
+.btn-ghost { border-color: var(--color-border); }
+.chip { min-height: 38px; padding: .35rem .9rem; font-size: .9rem; }
+
+/* Sections : pas d'alternance colorée, simple filet de séparation */
+.section:nth-of-type(even):not(.hero) { background: var(--color-bg); }
+.section + .section { border-top: 1px solid var(--color-border); }
+.section-header { text-align: left; margin-left: 0; max-width: 40rem; }
+.section-title { font-size: clamp(1.7rem, 3.4vw, 2.3rem); }
+.card { box-shadow: none; }
+.hero-eyebrow { font-family: var(--font-body); font-size: .85rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent); }
+
+/* Accueil compact */
+.hero-minimal { padding-block: clamp(3rem, 7vw, 5.5rem); }
+.hero-minimal .hero-title { font-size: clamp(2.2rem, 5vw, 3.4rem); max-width: 22ch; }
+.hero-minimal .hero-lead { color: var(--color-text-muted); }
+.hero-minimal-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; margin-top: 1.75rem; }
+.hero-minimal .hero-location { margin: 0; color: var(--color-text-muted); font-weight: 500; }
+
+/* Tarifs en tableau */
+.price-table-block { margin-bottom: 2.5rem; scroll-margin-top: 90px; }
+.price-table-full { font-size: 1rem; table-layout: fixed; }
+.price-table-full thead th:nth-child(1) { width: 44%; }
+.price-table-full thead th:nth-child(2) { width: 16%; }
+.price-table-full thead th:nth-child(3) { width: 18%; }
+.price-table-full thead th:nth-child(4) { width: 22%; }
+.price-table-full caption { font-size: 1.25rem; font-weight: 700; padding-bottom: .75rem; }
+.price-table-note { display: block; font-size: .9rem; font-weight: 400; color: var(--color-text-muted); margin-top: .2rem; }
+.price-table-full th, .price-table-full td { text-align: left; padding: .8rem .75rem; white-space: normal; }
+.price-table-full thead th { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); font-weight: 600; background: var(--color-surface); }
+.price-table-full tbody tr:hover { background: var(--color-surface); }
+.price-table-full thead th.price-col { text-align: right; }
+.price-table-full .price-col { text-align: right; white-space: nowrap; font-weight: 600; color: var(--color-heading); font-variant-numeric: tabular-nums; }
+.price-table-full .link-col { text-align: right; white-space: nowrap; }
+.price-table-alert { display: flex; gap: .35rem; align-items: flex-start; font-size: .85rem; font-weight: 400; color: var(--color-text-muted); margin-top: .25rem; }
+@media (max-width: 640px) {
+    .price-table-full { table-layout: auto; }
+    .price-table-full thead { display: none; }
+    .price-table-full tr { display: grid; grid-template-columns: 1fr auto; gap: .2rem .75rem; padding: .75rem 0; border-bottom: 1px solid var(--color-border); }
+    .price-table-full th, .price-table-full td { border: 0; padding: 0; }
+    .price-table-full td:nth-of-type(1) { grid-column: 1; font-size: .9rem; color: var(--color-text-muted); }
+    .price-table-full .link-col { grid-column: 1 / -1; text-align: left; }
+}
+
+/* Galerie sans effet de zoom */
+.gallery-item:hover img { transform: none; }

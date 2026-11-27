@@ -1,0 +1,127 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.blog' %}
+{% block title %}{{ post ? post.title : 'Nouvel article' }}{% endblock %}
+
+{% block actions %}
+    {% if post %}
+        <a class="btn btn-outline-secondary" href="{{ url('admin.blog.preview', {id: post.id}) }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i> Aperçu</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <p class="mb-3"><a href="{{ url('admin.blog') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Tous les articles</a></p>
+
+    {% if post %}
+        {% set status = status_labels[post.status] %}
+        <p class="mb-3">
+            <span class="badge text-bg-{{ status[1] }}">{{ status[0] }}</span>
+            {% if post.status != 'draft' and published_label %}<span class="small text-secondary ms-1">{{ post.status == 'scheduled' ? 'Mise en ligne prévue le' : 'Publié le' }} {{ published_label|date('d/m/Y à H:i') }}</span>{% endif %}
+            {% if post.status != 'draft' %}<a class="small ms-2" href="/blog/{{ post.slug }}" target="_blank" rel="noopener">/blog/{{ post.slug }}</a>{% endif %}
+        </p>
+    {% endif %}
+
+    <form method="post" action="{{ post ? url('admin.blog.update', {id: post.id}) : url('admin.blog.store') }}" novalidate data-blog-form>
+        {{ csrf_field() }}
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="admin-card">
+                    {{ forms.input('title', 'Titre', {required: true, maxlength: 150, value: post.title ?? ''}) }}
+                    {{ forms.input('slug', 'Adresse', {maxlength: 100, value: post.slug ?? '', help: 'Facultatif : déduite du titre. Évitez de la changer une fois l\'article publié.'}) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="f-excerpt">Chapeau (facultatif)</label>
+                        <textarea class="form-control{{ errors('excerpt') ? ' is-invalid' }}" id="f-excerpt" name="excerpt" rows="2" maxlength="300" aria-describedby="f-excerpt-help">{{ old('excerpt', post.excerpt ?? '') }}</textarea>
+                        <div class="form-text" id="f-excerpt-help">Résumé affiché dans la liste des articles. Par défaut : le début du texte.</div>
+                        {% for m in errors('excerpt') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                    </div>
+
+                    <span class="form-label d-block" id="content-label">Contenu</span>
+                    <div class="admin-editor" data-editor hidden>
+                        <div data-editor-surface aria-labelledby="content-label"></div>
+                    </div>
+                    <textarea class="form-control font-monospace small{{ errors('content') ? ' is-invalid' }}" id="f-content" name="content" rows="16" aria-labelledby="content-label" data-editor-source>{{ old('content', post.content ?? '') }}</textarea>
+                    {% for m in errors('content') %}<div class="text-danger small mt-1">{{ m }}</div>{% endfor %}
+                    <p class="form-text">Intertitres, gras, listes, liens et images de la bibliothèque. Le texte est nettoyé à l'enregistrement : les mises en forme non prévues sont retirées.</p>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <fieldset class="admin-card mb-4">
+                    <legend class="h6">Publication</legend>
+                    {% set current = old('publication', publication) %}
+                    {% for value, label in choices %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="publication" id="pub-{{ value }}" value="{{ value }}"{{ current == value ? ' checked' }} data-publication>
+                            <label class="form-check-label" for="pub-{{ value }}">{{ value == 'now' and post and post.status == 'published' ? 'Publié' : label }}</label>
+                        </div>
+                    {% endfor %}
+                    <div class="row g-2 mt-1" data-schedule-fields>
+                        <div class="col-7">
+                            <label class="form-label small mb-1" for="f-publish_date">Date</label>
+                            <input type="date" class="form-control form-control-sm{{ errors('publish_date') ? ' is-invalid' }}" id="f-publish_date" name="publish_date" value="{{ old('publish_date', publish_date) }}">
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small mb-1" for="f-publish_time">Heure</label>
+                            <input type="time" class="form-control form-control-sm" id="f-publish_time" name="publish_time" value="{{ old('publish_time', publish_time) }}" step="900">
+                        </div>
+                        {% for m in errors('publish_date') %}<div class="col-12 text-danger small">{{ m }}</div>{% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Enregistrer</button>
+                </fieldset>
+
+                <div class="admin-card mb-4">
+                    <div class="mb-3">
+                        <label class="form-label" for="f-category">Catégorie</label>
+                        <select class="form-select" id="f-category" name="category_id">
+                            <option value="">Aucune</option>
+                            {% for c in categories %}<option value="{{ c.id }}"{{ old('category_id', post.category_id ?? '')|default('') == c.id ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+                        </select>
+                        {% if categories is empty %}<div class="form-text"><a href="{{ url('admin.blog.taxonomy') }}">Créer des catégories</a></div>{% endif %}
+                    </div>
+                    {{ forms.input('tags', 'Tags', {value: tags, help: 'Séparés par des virgules. Nouveaux tags créés automatiquement.'}) }}
+                    {% if all_tags is not empty %}<p class="small text-secondary mt-n2">Existants : {{ all_tags|join(', ') }}</p>{% endif %}
+
+                    <span class="form-label d-block" id="cover-label">Image de couverture</span>
+                    <div class="admin-media-field mb-1" data-media-field>
+                        <input type="hidden" name="cover_media_id" value="{{ cover ? cover.id : '' }}" data-media-input>
+                        <div class="admin-media-field-preview" data-media-preview>
+                            {% if cover %}<img src="{{ cover.url('thumb') }}" alt="{{ cover.altText }}">{% else %}<span class="text-secondary small">Aucune image</span>{% endif %}
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="cover-label">Choisir dans la bibliothèque</button>
+                            <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ cover ? '' : ' hidden' }}>Retirer</button>
+                        </div>
+                    </div>
+                    {% for m in errors('cover_media_id') %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+                </div>
+
+                <details class="admin-card mb-4"{% if errors('seo_title') or errors('seo_description') %} open{% endif %}>
+                    <summary class="h6 mb-0">Référencement (Google)</summary>
+                    <div class="mt-3">
+                        {{ forms.input('seo_title', 'Titre pour Google', {maxlength: 70, value: post.seo_title ?? '', help: 'Par défaut : le titre de l\'article.'}) }}
+                        <label class="form-label" for="f-seo_description">Description pour Google</label>
+                        <textarea class="form-control{{ errors('seo_description') ? ' is-invalid' }}" id="f-seo_description" name="seo_description" rows="3" maxlength="300">{{ old('seo_description', post.seo_description ?? '') }}</textarea>
+                        {% for m in errors('seo_description') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                    </div>
+                </details>
+            </div>
+        </div>
+    </form>
+
+    {% if post %}
+        <form method="post" action="{{ url('admin.blog.destroy', {id: post.id}) }}" class="mt-2" data-confirm="Supprimer définitivement l'article « {{ post.title }} » ?">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-link text-danger px-0">Supprimer l'article</button>
+        </form>
+    {% endif %}
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <link rel="stylesheet" href="{{ asset('assets/vendor/quill/quill.snow.css') }}">
+    <script src="{{ asset('assets/vendor/quill/quill.js') }}"></script>
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-blog-editor.js') }}"></script>
+{% endblock %}

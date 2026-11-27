@@ -1,0 +1,155 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.appearance' %}
+{% block title %}Apparence{% endblock %}
+
+{% macro field_error(key) %}
+    {% for m in errors(key) %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+{% endmacro %}
+
+{% block actions %}
+    <div class="d-flex flex-wrap gap-2">
+        {% if has_draft %}
+            <form method="post" action="{{ url('admin.appearance.publish') }}">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-upload" aria-hidden="true"></i> Publier</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    {% include 'admin/appearance/_tabs.twig' %}
+
+    <div class="admin-card mb-4 d-flex flex-wrap align-items-center gap-3">
+        <span>Template : <strong>{{ template.name }}</strong></span>
+        {% if has_draft %}
+            <span class="small text-warning-emphasis"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Des réglages attendent d'être publiés.</span>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.appearance.preview') }}"><i class="bi bi-eye" aria-hidden="true"></i> Aperçu</a>
+            <form method="post" action="{{ url('admin.appearance.discard') }}" class="ms-auto" data-confirm="Annuler les réglages non publiés ?">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Annuler les modifications</button>
+            </form>
+        {% else %}
+            <span class="small text-secondary">Les réglages ci-dessous sont ceux du site en ligne.</span>
+        {% endif %}
+    </div>
+
+    {% if warnings is not empty %}
+        <div class="alert alert-warning" role="status">
+            <strong>Lisibilité insuffisante</strong> pour certaines personnes (norme WCAG AA) :
+            <ul class="mb-0 mt-1">
+                {% for w in warnings %}
+                    <li>{{ w.label }} : contraste {{ w.ratio|number_format(2, ',') }} pour 1 (minimum conseillé {{ w.minimum|number_format(1, ',') }}).</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ url('admin.appearance.save') }}" novalidate>
+        {{ csrf_field() }}
+        <div class="row g-4">
+            <div class="col-xl-6">
+                <fieldset class="admin-card mb-4">
+                    <legend class="h6">Couleurs</legend>
+                    <div class="row g-3">
+                        {% for f in groups.color %}
+                            {% set value = old('tokens') is iterable ? (old('tokens')[f.key] ?? f.value) : f.value %}
+                            <div class="col-sm-6">
+                                <label class="form-label small mb-1" for="t-{{ f.key }}">{{ f.label }}</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="color" class="form-control form-control-color" id="t-{{ f.key }}" name="tokens[{{ f.key }}]" value="{{ value|lower }}" data-color-input>
+                                    <span class="small font-monospace text-secondary" data-color-value>{{ value|upper }}</span>
+                                    {% if value|upper != f.default|upper %}<span class="badge text-bg-light" title="Valeur d'origine : {{ f.default }}">modifiée</span>{% endif %}
+                                </div>
+                                {{ _self.field_error(f.key) }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="admin-card mb-4">
+                    <legend class="h6">Typographie</legend>
+                    {% for f in groups.font %}
+                        <div class="mb-3">
+                            <label class="form-label" for="t-{{ f.key }}">{{ f.label }}</label>
+                            <select class="form-select" id="t-{{ f.key }}" name="tokens[{{ f.key }}]">
+                                {% for category, names in fonts %}
+                                    <optgroup label="{{ font_categories[category] ?? category }}">
+                                        {% for name in names %}
+                                            <option value="{{ name }}"{{ f.value == name ? ' selected' }}>{{ name }}{{ name == f.default ? ' (origine)' }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                            {{ _self.field_error(f.key) }}
+                        </div>
+                    {% endfor %}
+                    <p class="small text-secondary mb-0">Polices Google Fonts sélectionnées pour leur lisibilité ; elles se chargent automatiquement.</p>
+                </fieldset>
+            </div>
+
+            <div class="col-xl-6">
+                <fieldset class="admin-card mb-4">
+                    <legend class="h6">Formes et espaces</legend>
+                    <div class="row g-3">
+                        {% for f in groups.shape %}
+                            <div class="col-sm-6">
+                                <label class="form-label small mb-1" for="t-{{ f.key }}">{{ f.label }}</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="t-{{ f.key }}" name="tokens[{{ f.key }}]" value="{{ f.value }}" min="{{ f.min }}" max="{{ f.max }}" step="1" aria-describedby="t-{{ f.key }}-help">
+                                    <span class="input-group-text">px</span>
+                                </div>
+                                <div class="form-text" id="t-{{ f.key }}-help">De {{ f.min }} à {{ f.max }} (origine : {{ f.default }}).</div>
+                                {{ _self.field_error(f.key) }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="admin-card mb-4">
+                    <legend class="h6">Animations et mise en page</legend>
+                    {% for f in groups.motion %}
+                        <div class="mb-3">
+                            <label class="form-label" for="t-{{ f.key }}">{{ f.label }}</label>
+                            <select class="form-select" id="t-{{ f.key }}" name="tokens[{{ f.key }}]" aria-describedby="t-{{ f.key }}-help">
+                                {% for value, label in motion_labels %}
+                                    <option value="{{ value }}"{{ f.value == value ? ' selected' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text" id="t-{{ f.key }}-help">Toujours désactivées pour les visiteurs qui ont demandé à réduire les animations.</div>
+                        </div>
+                    {% endfor %}
+                    {% for option, values in layout_options %}
+                        {% set labels = layout_labels[option] ?? {label: option, values: {}} %}
+                        <fieldset class="mb-3">
+                            <legend class="form-label">{{ labels.label }}</legend>
+                            {% for v in values %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="layout[{{ option }}]" id="l-{{ option }}-{{ v }}" value="{{ v }}"{{ layout[option] == v ? ' checked' }}>
+                                    <label class="form-check-label" for="l-{{ option }}-{{ v }}">{{ labels.values[v] ?? v }}</label>
+                                </div>
+                            {% endfor %}
+                            {{ _self.field_error('layout_' ~ option) }}
+                        </fieldset>
+                    {% endfor %}
+                    <p class="small text-secondary mb-0">La présentation de chaque section (variante) se choisit dans <a href="{{ url('admin.pages') }}">Pages</a>. Logo, nom et slogan : <a href="{{ url('admin.settings') }}">Paramètres</a>.</p>
+                </fieldset>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">Enregistrer le brouillon</button>
+            <button type="submit" class="btn btn-outline-primary" name="then" value="preview"><i class="bi bi-eye" aria-hidden="true"></i> Enregistrer et prévisualiser</button>
+        </div>
+    </form>
+
+    <form method="post" action="{{ url('admin.appearance.reset') }}" class="mt-4" data-confirm="Remettre toutes les valeurs d'origine du template dans le brouillon ?">
+        {{ csrf_field() }}
+        <button type="submit" class="btn btn-link text-danger px-0">Revenir aux valeurs d'origine du template</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/admin-appearance.js') }}"></script>
+{% endblock %}

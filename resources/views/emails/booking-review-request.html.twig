@@ -1,0 +1,12 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}Quelques mots sur votre {{ booking.service_label|lower }} ?{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">Merci pour votre confiance</h1>
+    <p>Bonjour {{ booking.first_name }},</p>
+    <p>J'espère que votre {{ booking.service_label|lower }} vous plaît. Votre avis m'aide beaucoup et guide les prochaines clientes : il ne prend qu'une minute.</p>
+    {% if manage_url %}
+        {% include 'emails/_button.html.twig' with {href: manage_url ~ '#avis', label: 'Laisser mon avis'} %}
+        <p style="margin:0 0 12px;font-size:13px;color:#6D5B54;">Ce lien est personnel. Votre avis sera publié après relecture, avec le nom que vous choisirez.</p>
+    {% endif %}
+    <p>À bientôt,<br>{{ site_name }}</p>
+{% endblock %}

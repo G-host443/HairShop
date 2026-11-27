@@ -1,0 +1,63 @@
+/*
+ * Template « Beauty Chic » : doux, lumineux, très arrondi. Dégradés poudrés, ombres légères,
+ * formes organiques en arrière-plan. Se superpose au socle commun (site.css).
+ */
+
+h1, h2, h3 { font-weight: 600; }
+.card { box-shadow: 0 18px 40px -28px rgb(var(--color-accent-dark-rgb) / .45); border-color: transparent; }
+
+/* En-tête */
+.site-header { background: rgb(var(--color-bg-rgb) / .9); }
+.brand-name { font-size: 2rem; color: var(--color-accent-dark); }
+.site-nav a::after { height: 3px; border-radius: 3px; }
+
+/* Boutons : pilules dégradées */
+.btn-primary { background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent)); border-color: var(--color-accent); box-shadow: 0 10px 22px -14px rgb(var(--color-accent-dark-rgb) / .8); }
+.btn-primary:hover { background: var(--color-accent-dark); border-color: var(--color-accent-dark); color: var(--color-surface); }
+.btn-ghost { background: var(--color-surface); border-color: var(--color-border); }
+
+/* Sections : fond rosé alterné aux angles adoucis */
+.section:nth-of-type(even):not(.hero) { background: linear-gradient(180deg, var(--color-surface-alt), var(--color-bg)); }
+.section-title { font-size: clamp(2rem, 4.2vw, 2.9rem); }
+
+/* Hero : formes organiques floues derrière le contenu */
+.hero { position: relative; isolation: isolate; overflow: hidden; }
+.hero::before, .hero::after {
+    content: ""; position: absolute; z-index: -1; border-radius: 50%; filter: blur(2px);
+    background: radial-gradient(circle at 35% 35%, var(--color-accent-light), rgb(var(--color-accent-rgb) / .25) 70%);
+}
+.hero::before { width: 420px; height: 420px; top: -140px; left: -120px; }
+.hero::after { width: 320px; height: 320px; bottom: -120px; right: -80px; opacity: .8; }
+.hero-eyebrow { font-size: clamp(1.9rem, 3.4vw, 2.5rem); }
+.hero-centered-image { box-shadow: 0 0 0 10px rgb(var(--color-surface-rgb) / .8), 0 24px 50px -30px rgb(var(--color-accent-dark-rgb) / .7); }
+.hero-frame { border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%; }
+.hero-frame::before { border-radius: inherit; }
+
+/* Tarifs, galerie : douceur */
+.pricing-item { border-top-style: solid; border-top-color: rgb(var(--color-accent-rgb) / .3); }
+.chip { box-shadow: 0 6px 14px -12px rgb(var(--color-accent-dark-rgb) / .8); }
+.gallery-item figure { box-shadow: 0 16px 34px -26px rgb(var(--color-accent-dark-rgb) / .7); }
+
+/* Carrousel d'avis */
+.carousel { position: relative; }
+.carousel-track {
+    list-style: none; margin: 0; padding: .5rem .25rem 1.5rem; display: grid; grid-auto-flow: column;
+    grid-auto-columns: min(85%, 360px); gap: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory;
+    scroll-padding-inline: .25rem; overscroll-behavior-x: contain;
+}
+.carousel-track:focus-visible { outline-offset: 6px; }
+.carousel-item { scroll-snap-align: start; display: flex; flex-direction: column; }
+.carousel-item blockquote { margin: 0 0 1rem; flex: 1; }
+.carousel-stars { color: var(--color-accent-dark); letter-spacing: .12em; }
+.carousel-controls { display: flex; justify-content: center; gap: .75rem; margin-top: .5rem; }
+.carousel-controls[hidden] { display: none; }
+.carousel-btn {
+    width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--color-border); cursor: pointer;
+    background: var(--color-surface); color: var(--color-heading); font-size: 1.6rem; line-height: 1;
+}
+.carousel-btn:hover { background: var(--color-accent); border-color: var(--color-accent); }
+
+/* Animations « prononcées » : légère montée des cartes au survol */
+html[data-motion="lively"] .card { transition: transform .3s ease, box-shadow .3s ease; }
+html[data-motion="lively"] .card:hover { transform: translateY(-4px); }
+@media (prefers-reduced-motion: reduce) { html[data-motion="lively"] .card:hover { transform: none; } }

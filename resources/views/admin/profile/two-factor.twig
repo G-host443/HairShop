@@ -1,0 +1,94 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.profile.two_factor' %}
+{% block title %}Double authentification{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        <div class="col-lg-7">
+            {% if not enabled %}
+                <div class="admin-card">
+                    <p><span class="badge text-bg-secondary">Désactivée</span></p>
+                    <p>La double authentification n'est pas activée sur ce site (réglage par défaut). La connexion se fait avec l'adresse e-mail et le mot de passe.</p>
+                    <p class="mb-0">
+                        {% if can_settings %}
+                            Pour la proposer, cochez « Double authentification » dans <a href="{{ url('admin.settings', {group: 'security'}) }}">Paramètres → Sécurité</a>, puis revenez sur cette page.
+                        {% else %}
+                            Un compte ayant accès aux paramètres peut l'autoriser dans Paramètres → Sécurité.
+                        {% endif %}
+                        {% if configured %}<br><span class="small text-secondary">Votre compte l'avait configurée : elle reprendra effet si le réglage est réactivé.</span>{% endif %}
+                    </p>
+                </div>
+
+            {% elseif new_codes %}
+                <div class="admin-card border-warning">
+                    <h2 class="h6">Vos codes de secours</h2>
+                    <p>Chaque code permet <strong>une</strong> connexion si vous n'avez pas votre téléphone. Notez-les ou imprimez-les maintenant et gardez-les en lieu sûr : ils ne seront plus affichés.</p>
+                    <ul class="admin-recovery-codes list-unstyled">
+                        {% for code in new_codes %}<li><code>{{ code }}</code></li>{% endfor %}
+                    </ul>
+                    <a class="btn btn-primary" href="{{ url('admin.profile.two_factor') }}">C'est noté</a>
+                </div>
+
+            {% elseif configured %}
+                <div class="admin-card mb-4">
+                    <p><span class="badge text-bg-success">Activée</span></p>
+                    <p class="mb-0">Un code de votre application d'authentification est demandé à chaque connexion. Codes de secours restants : <strong>{{ remaining }}</strong>{% if remaining <= 2 %} — pensez à en créer de nouveaux{% endif %}.</p>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <form method="post" action="{{ url('admin.profile.two_factor.codes') }}" class="admin-card h-100" novalidate>
+                            {{ csrf_field() }}
+                            <h2 class="h6">Nouveaux codes de secours</h2>
+                            {{ forms.input('password', 'Votre mot de passe', {type: 'password', id: 'codes-password', autocomplete: 'current-password'}) }}
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Créer de nouveaux codes</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="post" action="{{ url('admin.profile.two_factor.disable') }}" class="admin-card h-100" data-confirm="Désactiver la double authentification pour votre compte ?" novalidate>
+                            {{ csrf_field() }}
+                            <h2 class="h6 text-danger">Désactiver</h2>
+                            {{ forms.input('password', 'Votre mot de passe', {type: 'password', id: 'disable-password', autocomplete: 'current-password'}) }}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Désactiver pour mon compte</button>
+                        </form>
+                    </div>
+                </div>
+
+            {% elseif setup %}
+                <form method="post" action="{{ url('admin.profile.two_factor.confirm') }}" class="admin-card" novalidate>
+                    {{ csrf_field() }}
+                    <h2 class="h6">1. Scannez ce QR code</h2>
+                    <p class="small">Avec une application d'authentification : Google Authenticator, Microsoft Authenticator, Aegis, 2FAS…</p>
+                    <div class="admin-qr" data-qr="{{ setup.uri }}" aria-hidden="true"></div>
+                    <p class="small mb-1">Impossible de scanner ? Saisissez cette clé dans l'application :</p>
+                    <p><code class="admin-totp-key">{{ setup.secret }}</code></p>
+                    <h2 class="h6 mt-4">2. Saisissez le code à 6 chiffres affiché par l'application</h2>
+                    {{ forms.input('code', 'Code', {autocomplete: 'one-time-code', required: true, maxlength: 7}) }}
+                    <button type="submit" class="btn btn-primary">Activer la double authentification</button>
+                    <a class="btn btn-link" href="{{ url('admin.profile.two_factor') }}">Annuler</a>
+                </form>
+
+            {% else %}
+                <div class="admin-card">
+                    <p><span class="badge text-bg-secondary">Non activée pour votre compte</span></p>
+                    <p>La double authentification protège votre compte même si votre mot de passe est découvert : à chaque connexion, un code à 6 chiffres de votre téléphone est demandé.</p>
+                    <a class="btn btn-primary" href="{{ url('admin.profile.two_factor') }}?configurer=1">Configurer</a>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-lg-5">
+            <div class="admin-card small text-secondary">
+                <p class="mb-2"><strong>Téléphone perdu ?</strong> Utilisez un code de secours à la place du code de l'application.</p>
+                <p class="mb-0">Sans code de secours, la personne qui gère le serveur peut retirer la double authentification d'un compte avec la commande <code>php bin/console user:disable-2fa --email=…</code>.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {% if setup %}
+        <script src="{{ asset('assets/vendor/qrcode/qrcode.js') }}"></script>
+        <script src="{{ asset('assets/js/admin-two-factor.js') }}"></script>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% autoescape false %}
+{{ booking.status == 'pending' ? 'Nouvelle demande à confirmer' : 'Nouveau rendez-vous' }}
+
+{{ booking.first_name }} {{ booking.last_name }} — {{ booking.phone }} {{ booking.email }}
+{{ booking.service_label }}
+{{ booking.starts_at|date_fr('datetime')|capitalize }} → {{ booking.ends_at|date_fr('time') }}
+Prix : {{ booking.estimated_total is not null ? booking.estimated_total|euros : 'sur devis' }}
+{% if booking.customer_comment %}
+Message : {{ booking.customer_comment }}
+{% endif %}
+
+{{ admin_url }}
+{% endautoescape %}

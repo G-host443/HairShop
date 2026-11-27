@@ -1,0 +1,112 @@
+{% import '@components/forms.twig' as forms %}
+{% set user = auth_user() %}
+<!doctype html>
+<html lang="{{ app.locale }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{% block title %}Administration{% endblock %} — {{ app.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500;600&family=Parisienne&display=swap">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}">
+</head>
+<body class="admin">
+    <a class="visually-hidden-focusable admin-skip" href="#contenu">Aller au contenu</a>
+
+    <header class="admin-topbar d-lg-none">
+        <button class="btn btn-link text-reset" type="button" data-bs-toggle="offcanvas" data-bs-target="#admin-nav" aria-controls="admin-nav" aria-label="Ouvrir le menu">
+            <i class="bi bi-list fs-3" aria-hidden="true"></i>
+        </button>
+        <span class="admin-brand">{{ app.name }}</span>
+    </header>
+
+    <div class="admin-shell">
+        <nav class="admin-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="admin-nav" aria-label="Navigation de l'administration">
+            <div class="offcanvas-header d-lg-none">
+                <span class="admin-brand">{{ app.name }}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#admin-nav" aria-label="Fermer le menu"></button>
+            </div>
+            <div class="offcanvas-body flex-column">
+                <a class="admin-brand d-none d-lg-block" href="{{ url('admin.dashboard') }}">{{ app.name }}</a>
+
+                {% set current = current_route ?? '' %}
+                <ul class="nav flex-column admin-menu">
+                    {% if can('dashboard.view') %}
+                        <li class="nav-item">
+                            <a class="nav-link{{ current == 'admin.dashboard' ? ' active' }}" href="{{ url('admin.dashboard') }}"{% if current == 'admin.dashboard' %} aria-current="page"{% endif %}>
+                                <i class="bi bi-grid-1x2" aria-hidden="true"></i> Tableau de bord
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% set menu = [
+                        {route: 'admin.bookings', label: 'Rendez-vous', icon: 'calendar-check', permission: 'bookings.view'},
+                        {route: 'admin.customers', label: 'Clientes', icon: 'people', permission: 'customers.view'},
+                        {route: 'admin.messages', label: 'Messages', icon: 'chat-left-text', permission: 'messages.view'},
+                        {route: 'admin.services', label: 'Prestations', icon: 'scissors', permission: 'catalog.manage', match: ['admin.services', 'admin.categories', 'admin.catalog']},
+                        {route: 'admin.schedule', label: 'Horaires', icon: 'clock', permission: 'schedule.manage'},
+                        {route: 'admin.promotions', label: 'Promotions', icon: 'tag', permission: 'promotions.manage'},
+                        {route: 'admin.gallery', label: 'Galerie', icon: 'camera', permission: 'gallery.manage'},
+                        {route: 'admin.reviews', label: 'Avis', icon: 'chat-heart', permission: 'reviews.moderate'},
+                        {route: 'admin.pages', label: 'Pages', icon: 'file-earmark-richtext', permission: 'content.manage'},
+                        {route: 'admin.blog', label: 'Blog', icon: 'journal-richtext', permission: 'blog.manage'},
+                        {route: 'admin.appearance', label: 'Apparence', icon: 'palette', permission: 'appearance.manage'},
+                        {route: 'admin.media', label: 'Médias', icon: 'images', permission: 'media.manage'},
+                        {route: 'admin.notifications', label: 'E-mails', icon: 'envelope', permission: 'settings.manage'},
+                        {route: 'admin.settings', label: 'Paramètres', icon: 'gear', permission: 'settings.manage'},
+                        {route: 'admin.audit', label: 'Journal', icon: 'clock-history', permission: 'audit.view'},
+                    ] %}
+                    {% for item in menu %}
+                        {% if can(item.permission) %}
+                            {% set active = (item.match ?? [item.route])|filter(prefix => current starts with prefix)|length > 0 %}
+                            <li class="nav-item">
+                                <a class="nav-link{{ active ? ' active' }}" href="{{ url(item.route) }}"{% if active %} aria-current="page"{% endif %}>
+                                    <i class="bi bi-{{ item.icon }}" aria-hidden="true"></i> {{ item.label }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+
+                <div class="admin-account mt-auto">
+                    {% if user %}
+                        <p class="admin-account-name mb-1">{{ user.fullName }}</p>
+                        <p class="admin-account-email mb-3">{{ user.email }}</p>
+                        <a class="nav-link px-0{{ current == 'admin.profile.password' ? ' active' }}" href="{{ url('admin.profile.password') }}">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i> Mot de passe
+                        </a>
+                        <a class="nav-link px-0{{ current == 'admin.profile.two_factor' ? ' active' }}" href="{{ url('admin.profile.two_factor') }}">
+                            <i class="bi bi-phone-vibrate" aria-hidden="true"></i> Double authentification
+                        </a>
+                        <form method="post" action="{{ url('admin.logout') }}">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-link nav-link px-0">
+                                <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Se déconnecter
+                            </button>
+                        </form>
+                    {% endif %}
+                    <a class="nav-link px-0 small" href="/" target="_blank" rel="noopener">
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Voir le site
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="admin-main" id="contenu" tabindex="-1">
+            <div class="admin-page-header">
+                <h1 class="admin-title">{% block heading %}{{ block('title') }}{% endblock %}</h1>
+                {% block actions %}{% endblock %}
+            </div>
+            {{ forms.alerts() }}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

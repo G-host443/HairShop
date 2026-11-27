@@ -1,0 +1,11 @@
+{% autoescape false %}
+Référence : {{ booking.reference }}
+Prestation : {{ booking.service_label }}{% for o in options %} + {{ o.label|lower }}{% endfor %}
+
+Date : {{ booking.starts_at|date_fr('datetime')|capitalize }}
+Fin estimée : {{ booking.ends_at|date_fr('time') }}
+Prix : {{ booking.final_total is not null ? booking.final_total|euros : (booking.estimated_total is not null ? booking.estimated_total|euros : 'sur devis') }}{% if booking.discount_amount > 0 and booking.final_total is null %} (remise de {{ booking.discount_amount|euros }} incluse){% endif %}
+{% if show_address %}{{ "\n" }}Adresse : {{ address }}
+{% elseif location_type == 'home' %}{{ "\n" }}L'adresse exacte vous sera envoyée avec la confirmation du rendez-vous.
+{% endif %}{{ "\n" }}
+{% endautoescape %}

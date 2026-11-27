@@ -1,0 +1,50 @@
+{% import 'pages/account/_forms.twig' as f %}
+<section class="section account">
+    <div class="container account-container">
+        {{ f.alerts() }}
+        {% include 'pages/account/_nav.twig' %}
+
+        <div class="account-grid">
+            <form method="post" action="/compte/profil" class="card booking-form" novalidate>
+                {{ csrf_field() }}
+                <h2 class="booking-subtitle">Mes informations</h2>
+                {{ f.field('first_name', 'Prénom', {autocomplete: 'given-name', required: true, value: user.firstName}) }}
+                {{ f.field('last_name', 'Nom', {autocomplete: 'family-name', required: true, value: user.lastName}) }}
+                {{ f.field('email', 'Adresse e-mail', {type: 'email', autocomplete: 'email', required: true, value: user.email, help: user.isEmailVerified ? 'Adresse confirmée.' : 'Adresse pas encore confirmée.'}) }}
+                {{ f.field('phone', 'Téléphone', {type: 'tel', autocomplete: 'tel', value: user.phone}) }}
+                <div class="form-field form-check">
+                    <input type="checkbox" id="a-marketing" name="marketing" value="1"{{ customer.marketing_consent ? ' checked' }}>
+                    <label for="a-marketing">Recevoir les nouvelles et offres</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </form>
+
+            <div class="account-side">
+                <form method="post" action="/compte/mot-de-passe" class="card booking-form" novalidate>
+                    {{ csrf_field() }}
+                    <h2 class="booking-subtitle">Mot de passe</h2>
+                    {{ f.field('current_password', 'Mot de passe actuel', {type: 'password', autocomplete: 'current-password', required: true}) }}
+                    {{ f.field('password', 'Nouveau mot de passe', {type: 'password', autocomplete: 'new-password', required: true, help: 'Au moins ' ~ min_length ~ ' caractères.'}) }}
+                    {{ f.field('password_confirmation', 'Confirmer', {type: 'password', autocomplete: 'new-password', required: true}) }}
+                    <button type="submit" class="btn btn-ghost">Changer le mot de passe</button>
+                </form>
+
+                <div class="card">
+                    <h2 class="booking-subtitle">Mes données</h2>
+                    <p class="text-muted">Téléchargez toutes les informations conservées sur vous (compte, rendez-vous, favoris).</p>
+                    <a class="btn btn-ghost btn-sm" href="/compte/export">Télécharger mes données</a>
+
+                    <details class="booking-cancel">
+                        <summary>Supprimer mon compte</summary>
+                        <form method="post" action="/compte/supprimer" class="booking-form" data-confirm="Supprimer définitivement votre espace ?" novalidate>
+                            {{ csrf_field() }}
+                            <p class="text-muted">Votre espace et vos favoris seront supprimés. L'historique de vos rendez-vous passés est conservé par le salon, sans lien avec un compte.</p>
+                            {{ f.field('password', 'Mot de passe', {type: 'password', id: 'delete-password', error_key: 'delete_password', autocomplete: 'current-password', required: true}) }}
+                            <button type="submit" class="btn btn-ghost">Supprimer mon compte</button>
+                        </form>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

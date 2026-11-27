@@ -1,0 +1,8 @@
+{% autoescape false %}
+{{ booking.first_name }} {{ booking.last_name }} a annulé son rendez-vous du {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}).
+{% if booking.cancel_reason %}{{ booking.cancel_reason }}
+{% endif %}
+Le créneau est de nouveau proposé à la réservation.
+
+{{ admin_url }}
+{% endautoescape %}

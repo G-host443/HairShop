@@ -1,0 +1,10 @@
+{% extends 'layouts/system.twig' %}
+
+{% block title %}Accès refusé — {{ app.name }}{% endblock %}
+
+{% block content %}
+    <p class="sys-code">403</p>
+    <h1 class="sys-title">Accès refusé</h1>
+    <p class="sys-lead">{{ message }}</p>
+    <p><a class="sys-btn" href="/admin">Retour au tableau de bord</a></p>
+{% endblock %}

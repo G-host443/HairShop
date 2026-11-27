@@ -1,0 +1,13 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+Petit rappel de votre rendez-vous, {{ booking.starts_at|date_fr('datetime') }}.
+
+{% include 'emails/_booking_details.txt.twig' %}
+{% if rules is not empty %}
+Pour bien préparer votre venue :
+{% for r in rules %}- {{ r }}
+{% endfor %}
+{% endif %}
+{% include 'emails/_manage.txt.twig' %}
+{% endautoescape %}

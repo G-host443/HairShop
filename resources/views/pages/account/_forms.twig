@@ -1,0 +1,26 @@
+{# Champs de formulaire de l'espace cliente (classes génériques des templates). #}
+{% macro field(name, label, options = {}) %}
+    {% set type = options.type ?? 'text' %}
+    {% set id = 'a-' ~ (options.id ?? name) %}
+    {% set field_errors = errors(options.error_key ?? name) %}
+    {% set value = type == 'password' ? '' : old(name, options.value ?? '') %}
+    <div class="form-field">
+        <label for="{{ id }}">{{ label }}{% if options.required ?? false %} <span aria-hidden="true">*</span>{% endif %}</label>
+        <input type="{{ type }}" id="{{ id }}" name="{{ name }}"{% if value is not same as('') %} value="{{ value }}"{% endif %}
+               {% if options.autocomplete is defined %}autocomplete="{{ options.autocomplete }}"{% endif %}
+               {{ (options.required ?? false) ? 'required' }} {{ (options.autofocus ?? false) ? 'autofocus' }}
+               {% if field_errors %}aria-invalid="true" aria-describedby="{{ id }}-error"{% elseif options.help is defined %}aria-describedby="{{ id }}-help"{% endif %}>
+        {% if field_errors %}
+            <p class="form-error" id="{{ id }}-error">{{ field_errors|join(' ') }}</p>
+        {% elseif options.help is defined %}
+            <p class="form-help" id="{{ id }}-help">{{ options.help }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro alerts() %}
+    {% for type in ['success', 'error', 'info', 'warning'] %}
+        {% set message = flash(type) %}
+        {% if message %}<p class="{{ type == 'error' ? 'booking-alert' : 'form-success' }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>{% endif %}
+    {% endfor %}
+{% endmacro %}

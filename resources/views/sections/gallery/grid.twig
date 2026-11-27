@@ -1,0 +1,16 @@
+<section class="section gallery" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="gallery-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="gallery-title-{{ section.id }}">{{ title }}</h2>
+            {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        </header>
+        <ul class="gallery-grid">
+            {% for item in items %}
+                <li class="gallery-item reveal">{% include 'partials/gallery-item.twig' with {item: item, group: 'section-' ~ section.id} only %}</li>
+            {% endfor %}
+        </ul>
+        {% if show_link %}
+            <p class="section-more reveal"><a class="btn btn-ghost" href="/galerie">Voir toutes les réalisations</a></p>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,202 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.schedule' %}
+{% block title %}Horaires{% endblock %}
+
+{% macro fr_date(value, with_year = true) %}{% apply spaceless %}
+    {% set days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] %}
+    {% set months = ['', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'] %}
+    {{ days[value|date('w')] }} {{ value|date('j') }} {{ months[value|date('n')] }}{{ with_year ? ' ' ~ value|date('Y') }}
+{% endapply %}{% endmacro %}
+
+{% block content %}
+    {% import _self as m %}
+    {% set all_errors = errors() %}
+
+    <p class="text-secondary">Ces horaires servent à calculer les créneaux proposés à la réservation (fuseau : {{ timezone }}). Réservation ouverte du {{ m.fr_date(window[0]) }} au {{ m.fr_date(window[1]) }} — modifiable dans <a href="{{ url('admin.settings', {group: 'booking'}) }}">Paramètres › Réservation</a>.</p>
+
+    <div class="row g-4">
+        {# ---------- Semaine type ---------- #}
+        <div class="col-xl-7">
+            <form method="post" action="{{ url('admin.schedule.weekly') }}" class="admin-card" novalidate>
+                {{ csrf_field() }}
+                <h2 class="h5 mb-1">Semaine type</h2>
+                <p class="small text-secondary">Jusqu'à {{ max_ranges }} plages par jour (ex. 10:00 – 13:00 puis 14:00 – 19:00 pour une pause). Jour sans plage = fermé.</p>
+
+                {% set old_hours = old('hours', null) %}
+                <div class="admin-week">
+                    {% for day, label in days %}
+                        {% set day_error = all_errors['hours.' ~ day] ?? null %}
+                        <div class="admin-week-day{{ day_error ? ' has-error' }}" role="group" aria-labelledby="day-{{ day }}">
+                            <span class="admin-week-label" id="day-{{ day }}">{{ label|capitalize }}</span>
+                            <div class="admin-week-ranges">
+                                {% for i in 0..(max_ranges - 1) %}
+                                    {% set range = week[day][i] ?? null %}
+                                    {% set opens = old_hours is not null ? (old_hours[day][i].opens ?? '') : (range ? range[0] : '') %}
+                                    {% set closes = old_hours is not null ? (old_hours[day][i].closes ?? '') : (range ? range[1] : '') %}
+                                    <div class="admin-week-range{{ i > 0 and not opens and not closes ? ' is-optional' }}">
+                                        <label class="visually-hidden" for="h-{{ day }}-{{ i }}-o">{{ label }}, plage {{ i + 1 }}, ouverture</label>
+                                        <input type="time" class="form-control form-control-sm" id="h-{{ day }}-{{ i }}-o" name="hours[{{ day }}][{{ i }}][opens]" value="{{ opens }}" step="900">
+                                        <span aria-hidden="true">–</span>
+                                        <label class="visually-hidden" for="h-{{ day }}-{{ i }}-c">{{ label }}, plage {{ i + 1 }}, fermeture</label>
+                                        <input type="time" class="form-control form-control-sm" id="h-{{ day }}-{{ i }}-c" name="hours[{{ day }}][{{ i }}][closes]" value="{{ closes }}" step="900">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if week[day] is empty %}<span class="admin-week-status small">Fermé</span>{% endif %}
+                            {% if day_error %}<p class="text-danger small mb-0 admin-week-error">{{ day_error|first }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Enregistrer la semaine</button>
+            </form>
+        </div>
+
+        {# ---------- Aperçu ---------- #}
+        <div class="col-xl-5">
+            <div class="admin-card">
+                <h2 class="h5 mb-1">Aperçu des créneaux</h2>
+                <p class="small text-secondary">Ce que verra une cliente pour une prestation de cette durée.</p>
+                <form method="get" action="{{ url('admin.schedule') }}" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                    <div>
+                        <label class="form-label small" for="p-date">Date</label>
+                        <input type="date" class="form-control form-control-sm" id="p-date" name="apercu_date" value="{{ preview.date }}">
+                    </div>
+                    <div>
+                        <label class="form-label small" for="p-duration">Durée (min)</label>
+                        <input type="number" class="form-control form-control-sm" id="p-duration" name="apercu_duree" value="{{ preview.duration }}" min="15" max="1440" step="15">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Voir</button>
+                </form>
+                {% if preview.slots is empty %}
+                    <p class="mb-0 text-secondary">Aucun créneau ce jour-là pour {{ preview.duration }} minutes (fermé, complet, hors période de réservation ou délai minimum).</p>
+                {% else %}
+                    <p class="small mb-2">{{ preview.slots|length }} créneau{{ preview.slots|length > 1 ? 'x' }} le {{ m.fr_date(preview.date) }} :</p>
+                    <ul class="admin-slot-list list-unstyled mb-0">
+                        {% for slot in preview.slots %}<li>{{ slot|date('H:i') }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        {# ---------- Fermetures ---------- #}
+        <div class="col-lg-6">
+            <div class="admin-card h-100">
+                <h2 class="h5 mb-1">Congés et fermetures</h2>
+                <p class="small text-secondary">Aucun créneau n'est proposé sur ces jours. Annoncées aussi dans les infos pratiques du site.</p>
+                {% if blocked_dates is empty %}
+                    <p class="text-secondary small">Aucune fermeture prévue.</p>
+                {% else %}
+                    <ul class="admin-list list-unstyled">
+                        {% for b in blocked_dates %}
+                            <li class="admin-list-item">
+                                <span class="admin-list-main">
+                                    <span class="fw-medium">{{ b.starts_on == b.ends_on ? 'Le ' ~ m.fr_date(b.starts_on) : 'Du ' ~ m.fr_date(b.starts_on, false) ~ ' au ' ~ m.fr_date(b.ends_on) }}</span>
+                                    <span class="small text-secondary d-block">{{ {holiday: 'Congés', closure: 'Fermeture', other: 'Autre'}[b.reason] }}{{ b.note ? ' — ' ~ b.note }}</span>
+                                </span>
+                                <form method="post" action="{{ url('admin.schedule.closures.destroy', {id: b.id}) }}" data-confirm="Supprimer cette fermeture ? Les créneaux redeviendront réservables.">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" aria-label="Supprimer la fermeture"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <form method="post" action="{{ url('admin.schedule.closures.store') }}" class="row g-2 align-items-end border-top pt-3" novalidate>
+                    {{ csrf_field() }}
+                    <div class="col-sm-6"><label class="form-label small" for="c-from">Premier jour</label>
+                        <input type="date" class="form-control form-control-sm{{ errors('closure_from') ? ' is-invalid' }}" id="c-from" name="closure_from" min="{{ today }}" value="{{ old('closure_from') }}" required></div>
+                    <div class="col-sm-6"><label class="form-label small" for="c-to">Dernier jour (facultatif)</label>
+                        <input type="date" class="form-control form-control-sm{{ errors('closure_to') ? ' is-invalid' }}" id="c-to" name="closure_to" min="{{ today }}" value="{{ old('closure_to') }}"></div>
+                    <div class="col-sm-5"><label class="form-label small" for="c-reason">Motif</label>
+                        <select class="form-select form-select-sm" id="c-reason" name="closure_reason">
+                            <option value="holiday">Congés</option><option value="closure">Fermeture</option><option value="other">Autre</option>
+                        </select></div>
+                    <div class="col-sm-7"><label class="form-label small" for="c-note">Note (visible sur le site)</label>
+                        <input class="form-control form-control-sm" id="c-note" name="closure_note" maxlength="200" value="{{ old('closure_note') }}" placeholder="Ex. : Congés d'été"></div>
+                    <div class="col-12">
+                        {% for f in ['closure_from', 'closure_to'] %}{% if errors(f) %}<p class="text-danger small mb-1">{{ errors(f)|first }}</p>{% endif %}{% endfor %}
+                        <button type="submit" class="btn btn-sm btn-primary">Ajouter la fermeture</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# ---------- Créneaux bloqués et horaires exceptionnels ---------- #}
+        <div class="col-lg-6">
+            <div class="admin-card mb-4">
+                <h2 class="h5 mb-1">Créneaux bloqués</h2>
+                <p class="small text-secondary">Une indisponibilité ponctuelle dans une journée ouverte (rendez-vous personnel, formation…).</p>
+                {% if blocked_slots is not empty %}
+                    <ul class="admin-list list-unstyled">
+                        {% for s in blocked_slots %}
+                            <li class="admin-list-item">
+                                <span class="admin-list-main">
+                                    <span class="fw-medium">{{ m.fr_date(s.starts_at|date('Y-m-d', timezone)) }}, {{ s.starts_at|date('H:i', timezone) }} – {{ s.ends_at|date('H:i', timezone) }}</span>
+                                    {% if s.reason %}<span class="small text-secondary d-block">{{ s.reason }}</span>{% endif %}
+                                </span>
+                                <form method="post" action="{{ url('admin.schedule.slots.destroy', {id: s.id}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" aria-label="Débloquer ce créneau"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <form method="post" action="{{ url('admin.schedule.slots.store') }}" class="row g-2 align-items-end" novalidate>
+                    {{ csrf_field() }}
+                    <div class="col-sm-4"><label class="form-label small" for="s-date">Date</label>
+                        <input type="date" class="form-control form-control-sm{{ errors('slot_date') ? ' is-invalid' }}" id="s-date" name="slot_date" min="{{ today }}" required></div>
+                    <div class="col-4 col-sm-2"><label class="form-label small" for="s-from">De</label>
+                        <input type="time" class="form-control form-control-sm" id="s-from" name="slot_from" step="900" required></div>
+                    <div class="col-4 col-sm-2"><label class="form-label small" for="s-to">À</label>
+                        <input type="time" class="form-control form-control-sm{{ errors('slot_to') ? ' is-invalid' }}" id="s-to" name="slot_to" step="900" required></div>
+                    <div class="col-sm-4"><label class="form-label small" for="s-reason">Motif (privé)</label>
+                        <input class="form-control form-control-sm" id="s-reason" name="slot_reason" maxlength="200"></div>
+                    <div class="col-12">
+                        {% for f in ['slot_date', 'slot_from', 'slot_to'] %}{% if errors(f) %}<p class="text-danger small mb-1">{{ errors(f)|first }}</p>{% endif %}{% endfor %}
+                        <button type="submit" class="btn btn-sm btn-primary">Bloquer ce créneau</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-card">
+                <h2 class="h5 mb-1">Horaires exceptionnels</h2>
+                <p class="small text-secondary">Remplacent les horaires habituels d'une date précise (ouverture un jour normalement fermé, journée raccourcie…).</p>
+                {% if special_hours is not empty %}
+                    <ul class="admin-list list-unstyled">
+                        {% for s in special_hours %}
+                            <li class="admin-list-item">
+                                <span class="admin-list-main">
+                                    <span class="fw-medium">{{ m.fr_date(s.date) }} : {{ s.opens_at }} – {{ s.closes_at }}</span>
+                                    {% if s.note %}<span class="small text-secondary d-block">{{ s.note }}</span>{% endif %}
+                                </span>
+                                <form method="post" action="{{ url('admin.schedule.special.destroy', {id: s.id}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" aria-label="Supprimer cet horaire exceptionnel"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <form method="post" action="{{ url('admin.schedule.special.store') }}" class="row g-2 align-items-end" novalidate>
+                    {{ csrf_field() }}
+                    <div class="col-sm-4"><label class="form-label small" for="x-date">Date</label>
+                        <input type="date" class="form-control form-control-sm{{ errors('special_date') ? ' is-invalid' }}" id="x-date" name="special_date" min="{{ today }}" required></div>
+                    <div class="col-4 col-sm-2"><label class="form-label small" for="x-from">De</label>
+                        <input type="time" class="form-control form-control-sm{{ errors('special_opens') ? ' is-invalid' }}" id="x-from" name="special_opens" step="900" required></div>
+                    <div class="col-4 col-sm-2"><label class="form-label small" for="x-to">À</label>
+                        <input type="time" class="form-control form-control-sm{{ errors('special_closes') ? ' is-invalid' }}" id="x-to" name="special_closes" step="900" required></div>
+                    <div class="col-sm-4"><label class="form-label small" for="x-note">Note</label>
+                        <input class="form-control form-control-sm" id="x-note" name="special_note" maxlength="200"></div>
+                    <div class="col-12">
+                        {% for f in ['special_date', 'special_opens', 'special_closes'] %}{% if errors(f) %}<p class="text-danger small mb-1">{{ errors(f)|first }}</p>{% endif %}{% endfor %}
+                        <button type="submit" class="btn btn-sm btn-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

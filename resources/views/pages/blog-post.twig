@@ -1,0 +1,47 @@
+{# Article du blog. Le contenu est du HTML nettoyé à l'enregistrement (HtmlSanitizer, liste blanche). #}
+<article class="section blog-post">
+    <div class="container blog-post-container">
+        <p class="breadcrumb-line">
+            <a href="/blog">Blog</a>{% if post.category_name %} · <a href="/blog/categorie/{{ post.category_slug }}">{{ post.category_name }}</a>{% endif %}
+        </p>
+        <p class="blog-meta">
+            {% if post.published_at %}<time datetime="{{ post.published_at|date('Y-m-d') }}">{{ post.published_at|date_fr|capitalize }}</time>{% else %}Brouillon{% endif %}
+            · {{ reading_minutes }} min de lecture
+        </p>
+        {% if post.excerpt %}<p class="hero-lead blog-post-lead">{{ post.excerpt }}</p>{% endif %}
+
+        {% if cover %}
+            <figure class="blog-post-cover">
+                <img src="{{ cover.url('large') }}" alt="{{ cover.altText }}" fetchpriority="high"{% if cover.width %} width="{{ cover.width }}" height="{{ cover.height }}"{% endif %}>
+            </figure>
+        {% endif %}
+
+        <div class="prose blog-post-content">
+            {{ post.content|raw }}
+        </div>
+
+        {% if tags is not empty %}
+            <ul class="chip-row chip-row-start blog-post-tags" aria-label="Tags">
+                {% for t in tags %}<li><a class="chip" href="/blog/tag/{{ t.slug }}">#{{ t.name }}</a></li>{% endfor %}
+            </ul>
+        {% endif %}
+
+        <aside class="blog-post-cta card">
+            <p class="blog-post-cta-title">Envie de vous faire coiffer ?</p>
+            <p><a class="btn btn-primary" href="/reserver">Réserver un rendez-vous</a> <a class="btn btn-ghost" href="/prestations">Voir les prestations</a></p>
+        </aside>
+    </div>
+
+    {% if related is not empty %}
+        <div class="container">
+            <section class="blog-related" aria-labelledby="related-posts-title">
+                <h2 id="related-posts-title">À lire aussi</h2>
+                <ul class="blog-grid">
+                    {% for r in related %}
+                        <li>{% include 'partials/blog-card.twig' with {post: r, cover: r.cover_media_id ? (related_covers[r.cover_media_id] ?? null) : null, heading: 'h3'} only %}</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    {% endif %}
+</article>

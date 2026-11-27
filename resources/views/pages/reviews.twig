@@ -1,0 +1,45 @@
+{# Tous les avis publiés. #}
+<section class="section reviews-page">
+    <div class="container">
+        {% if stats.count == 0 %}
+            <p class="notice">Aucun avis publié pour le moment.</p>
+        {% else %}
+            <div class="reviews-summary card">
+                <p class="reviews-average"><strong>{{ stats.average|number_format(1, ',') }}</strong><span> / 5</span></p>
+                <p class="stars-text" aria-hidden="true">{{ '★'|repeat(stats.average|round) }}{{ '☆'|repeat(5 - stats.average|round) }}</p>
+                <p class="text-muted">{{ stats.count }} avis</p>
+                <ul class="reviews-distribution" aria-label="Répartition des notes">
+                    {% for rating, n in distribution %}
+                        <li>
+                            <span>{{ rating }} ★</span>
+                            <span class="reviews-bar" aria-hidden="true"><span style="width: {{ stats.count > 0 ? (n * 100 / stats.count)|round : 0 }}%"></span></span>
+                            <span class="text-muted">{{ n }}<span class="visually-hidden"> avis à {{ rating }} étoile{{ rating > 1 ? 's' }}</span></span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <ul class="testimonial-grid reviews-list">
+                {% for r in reviews %}
+                    <li class="card testimonial">
+                        <p class="stars-text" aria-label="Note : {{ r.rating }} sur 5">{{ '★'|repeat(r.rating) }}{{ '☆'|repeat(5 - r.rating) }}</p>
+                        <blockquote><p>{{ r.comment|nl2br }}</p></blockquote>
+                        <div class="testimonial-footer">
+                            {% if r.photo %}<img class="testimonial-photo" src="{{ r.photo.url('thumb') }}" alt="" width="48" height="48" loading="lazy">{% endif %}
+                            <p class="testimonial-author">{{ r.author_name }}<span class="testimonial-meta">{{ r.created_at|date_fr('month') }}{% if r.service_label %} · {{ r.service_label }}{% endif %}</span></p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if pages > 1 %}
+                <nav class="pagination" aria-label="Pages des avis">
+                    {% if page > 1 %}<a class="btn btn-ghost" href="/avis{{ page - 1 > 1 ? '?page=' ~ (page - 1) }}" rel="prev">Plus récents</a>{% endif %}
+                    <span class="text-muted">Page {{ page }} sur {{ pages }}</span>
+                    {% if page < pages %}<a class="btn btn-ghost" href="/avis?page={{ page + 1 }}" rel="next">Plus anciens</a>{% endif %}
+                </nav>
+            {% endif %}
+        {% endif %}
+        <p class="text-muted reviews-note">Les avis sont laissés par les clientes après leur rendez-vous, puis relus avant publication.</p>
+    </div>
+</section>

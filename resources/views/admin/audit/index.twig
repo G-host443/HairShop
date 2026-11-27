@@ -1,0 +1,67 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.audit' %}
+{% block title %}Journal d'activité{% endblock %}
+
+{% block content %}
+    <p class="text-secondary">Toutes les actions importantes de l'administration et des espaces clientes, y compris les consultations de fiches clientes.</p>
+
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+        <div>
+            <label class="form-label small mb-1" for="a-domain">Domaine</label>
+            <select class="form-select form-select-sm" id="a-domain" name="domaine">
+                <option value="">Tous</option>
+                {% for key, label in domains %}<option value="{{ key }}"{{ filters.domaine == key ? ' selected' }}>{{ label }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="a-user">Compte</label>
+            <select class="form-select form-select-sm" id="a-user" name="compte">
+                <option value="">Tous</option>
+                {% for u in users %}<option value="{{ u.id }}"{{ filters.compte == u.id ? ' selected' }}>{{ u.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="a-from">Du</label>
+            <input type="date" class="form-control form-control-sm" id="a-from" name="du" value="{{ filters.du }}">
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="a-to">Au</label>
+            <input type="date" class="form-control form-control-sm" id="a-to" name="au" value="{{ filters.au }}">
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrer</button>
+    </form>
+
+    <p class="small text-secondary" role="status">{{ total }} entrée{{ total > 1 ? 's' }}.</p>
+    <div class="admin-card p-0">
+        {% if entries is empty %}
+            <p class="text-secondary m-3">Aucune entrée.</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table admin-table align-middle mb-0 small">
+                    <thead><tr><th scope="col">Date</th><th scope="col">Action</th><th scope="col">Élément</th><th scope="col">Par</th><th scope="col">Adresse IP</th></tr></thead>
+                    <tbody>
+                        {% for e in entries %}
+                            <tr>
+                                <td class="text-nowrap">{{ e.created_at|date('d/m/Y H:i') }}</td>
+                                <td>{{ e.label }}{% if e.details %}<span class="d-block text-secondary">{{ e.details }}</span>{% endif %}</td>
+                                <td>{% if e.entity_label %}{% if e.link %}<a href="{{ e.link }}">{{ e.entity_label }} #{{ e.entity_id }}</a>{% else %}{{ e.entity_label }}{{ e.entity_id ? ' #' ~ e.entity_id }}{% endif %}{% endif %}</td>
+                                <td>{{ e.user_name ?: (e.user_email ?: '—') }}</td>
+                                <td class="text-secondary">{{ e.ip ?? '' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if pages > 1 %}
+        {% set base = url('admin.audit') ~ '?' ~ filters|filter(v => v is not null and v != '')|url_encode %}
+        <nav class="d-flex justify-content-center align-items-center gap-3 mt-3" aria-label="Pages">
+            {% if page > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}&page={{ page - 1 }}">Plus récentes</a>{% endif %}
+            <span class="small text-secondary">Page {{ page }} sur {{ pages }}</span>
+            {% if page < pages %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}&page={{ page + 1 }}">Plus anciennes</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

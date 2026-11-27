@@ -1,0 +1,53 @@
+{#
+  Tarifs : sélecteur interactif (coiffure → taille → longueur → options → total) construit en JavaScript
+  à partir des données JSON ci-dessous. Sans JavaScript, la liste des prestations avec leur prix de départ reste affichée.
+#}
+{% import 'partials/icons.twig' as ui %}
+<section class="section pricing" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="pricing-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="pricing-title-{{ section.id }}">{{ title }}</h2>
+            {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        </header>
+
+        <div class="pricing-app" data-pricing-app hidden></div>
+        <script type="application/json" data-pricing-data>{{ selector_json|raw }}</script>
+
+        <div class="pricing-fallback">
+        {% if categories|length > 1 %}
+            <nav class="chip-row reveal" aria-label="Catégories de prestations">
+                {% for category in categories %}
+                    <a class="chip" href="#categorie-{{ category.slug }}">{{ category.name }}</a>
+                {% endfor %}
+            </nav>
+        {% endif %}
+
+        <div class="pricing-categories">
+            {% for category in categories %}
+                <article class="pricing-category card reveal" id="categorie-{{ category.slug }}" aria-labelledby="cat-{{ section.id }}-{{ category.id }}">
+                    <h3 class="pricing-category-title" id="cat-{{ section.id }}-{{ category.id }}">{{ category.name }}</h3>
+                    {% if category.note %}<p class="pricing-category-note">{{ category.note }}</p>{% endif %}
+                    <ul class="pricing-list">
+                        {% for service in category.services %}
+                            <li class="pricing-item">
+                                <div class="pricing-item-main">
+                                    <span class="pricing-item-name">{{ service.name }}{% if service.promotion %} <span class="promo-badge" title="{{ service.promotion.name }}">{{ service.promotion.badge }}</span>{% endif %}</span>
+                                    <span class="pricing-item-leader" aria-hidden="true"></span>
+                                    <span class="pricing-item-price">{% if service.original_price_label %}<s class="price-original" aria-label="au lieu de {{ service.original_price_label }}">{{ service.original_price_label }}</s> {% endif %}{{ service.price_label }}</span>
+                                </div>
+                                {% if service.sizes or service.note or service.alert %}
+                                    <p class="pricing-item-details">
+                                        {% if service.sizes %}<span>Tailles {{ service.sizes }}</span>{% endif %}
+                                        {% if service.note %}<span>{{ service.note }}</span>{% endif %}
+                                        {% if service.alert %}<span class="pricing-item-alert">{{ ui.icon('info', 15) }} {{ service.alert }}</span>{% endif %}
+                                    </p>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            {% endfor %}
+        </div>
+        </div>
+    </div>
+</section>

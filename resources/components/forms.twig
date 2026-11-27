@@ -1,0 +1,54 @@
+{#
+  Macros de formulaires (Bootstrap 5) avec erreurs de validation et ancienne saisie.
+  Usage : {% import '@components/forms.twig' as forms %}
+          {{ forms.input('email', 'Adresse e-mail', {type: 'email', autocomplete: 'username', required: true}) }}
+#}
+
+{% macro input(name, label, options = {}) %}
+    {% set type = options.type ?? 'text' %}
+    {% set field_errors = errors(name) %}
+    {% set id = options.id ?? 'f-' ~ name %}
+    {% set value = type == 'password' ? '' : (old(name, options.value ?? '')) %}
+    <div class="mb-3">
+        <label class="form-label" for="{{ id }}">{{ label }}{% if options.required ?? false %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+        {% if type == 'password' %}<div class="input-group has-validation">{% endif %}
+        <input
+            type="{{ type }}"
+            class="form-control{{ field_errors ? ' is-invalid' }}"
+            id="{{ id }}"
+            name="{{ name }}"
+            {% if value is not same as('') %}value="{{ value }}"{% endif %}
+            {% if options.autocomplete is defined %}autocomplete="{{ options.autocomplete }}"{% endif %}
+            {% if options.required ?? false %}required{% endif %}
+            {% if options.autofocus ?? false %}autofocus{% endif %}
+            {% if options.minlength is defined %}minlength="{{ options.minlength }}"{% endif %}
+            {% if options.maxlength is defined %}maxlength="{{ options.maxlength }}"{% endif %}
+            {% if options.help is defined %}aria-describedby="{{ id }}-help"{% endif %}
+            {% if field_errors %}aria-invalid="true" aria-errormessage="{{ id }}-error"{% endif %}
+        >
+        {% if type == 'password' %}
+            <button class="btn btn-outline-secondary" type="button" data-toggle-password="{{ id }}" aria-label="Afficher le mot de passe" aria-pressed="false">
+                <i class="bi bi-eye" aria-hidden="true"></i>
+            </button>
+        {% endif %}
+        {% if field_errors %}
+            <div class="invalid-feedback" id="{{ id }}-error">
+                {% for message in field_errors %}<div>{{ message }}</div>{% endfor %}
+            </div>
+        {% endif %}
+        {% if type == 'password' %}</div>{% endif %}
+        {% if options.help is defined %}<div class="form-text" id="{{ id }}-help">{{ options.help }}</div>{% endif %}
+    </div>
+{% endmacro %}
+
+{% macro alerts() %}
+    {% for type, css in {success: 'success', error: 'danger', info: 'info', warning: 'warning'} %}
+        {% set message = flash(type) %}
+        {% if message %}
+            <div class="alert alert-{{ css }} alert-dismissible fade show" role="{{ type == 'error' ? 'alert' : 'status' }}">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

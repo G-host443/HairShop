@@ -1,0 +1,8 @@
+{% autoescape false %}
+Nouvel avis à modérer : {{ review.author_name }}, {{ review.rating }}/5{% if review.service_label %} ({{ review.service_label }}{% if review.reference %}, {{ review.reference }}{% endif %}){% endif %}
+
+{{ review.comment }}
+
+Approuver ou refuser : {{ admin_url }}
+L'avis n'est pas visible sur le site tant qu'il n'est pas approuvé.
+{% endautoescape %}

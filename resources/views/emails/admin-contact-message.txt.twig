@@ -1,0 +1,7 @@
+{% autoescape false %}
+Nouveau message de {{ message.name }} ({{ message.email }}{{ message.phone ? ', ' ~ message.phone }}) :
+
+{{ message.body }}
+
+Répondez directement à cet e-mail pour écrire à {{ message.name }}.
+{% endautoescape %}

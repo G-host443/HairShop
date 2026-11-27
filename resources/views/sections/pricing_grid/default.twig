@@ -1,0 +1,16 @@
+<section class="section pricing" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="pricing-title-{{ section.id }}">
+    <div class="container">
+        <h2 class="section-title" id="pricing-title-{{ section.id }}">{{ title }}</h2>
+        {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        {% for category in categories %}
+            <h3 id="categorie-{{ category.slug }}">{{ category.name }}</h3>
+            {% if category.note %}<p>{{ category.note }}</p>{% endif %}
+            <ul class="pricing-list">
+                {% for service in category.services %}
+                    <li class="pricing-item"><span class="pricing-item-name">{{ service.name }}{% if service.promotion %} <span class="promo-badge" title="{{ service.promotion.name }}">{{ service.promotion.badge }}</span>{% endif %}</span> — <span class="pricing-item-price">{% if service.original_price_label %}<s class="price-original" aria-label="au lieu de {{ service.original_price_label }}">{{ service.original_price_label }}</s> {% endif %}{{ service.price_label }}</span>
+                        {% if service.alert %}<br><small>{{ service.alert }}</small>{% endif %}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+</section>

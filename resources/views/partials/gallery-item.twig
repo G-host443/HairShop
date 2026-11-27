@@ -1,0 +1,36 @@
+{#
+  Une réalisation de la galerie. Paramètres : item {title, description, image, after, tags?, category_name?}, group (nom du groupe du plein écran).
+  Sans JavaScript, le lien ouvre simplement la grande image ; avec, une visionneuse plein écran.
+#}
+{% set group = group ?? 'galerie' %}
+<figure class="gallery-figure{{ item.after ? ' is-before-after' }}">
+    {% if item.after %}
+        <div class="before-after">
+            <a class="before-after-side" href="{{ item.image.url('large') }}" data-lightbox="{{ group }}" data-caption="{{ item.title }} — avant">
+                <img src="{{ item.image.url('medium') }}" alt="{{ item.image.altText ?: item.title ~ ', avant' }}" loading="lazy"{% if item.image.width %} width="{{ item.image.width }}" height="{{ item.image.height }}"{% endif %}>
+                <span class="before-after-label">Avant</span>
+            </a>
+            <a class="before-after-side" href="{{ item.after.url('large') }}" data-lightbox="{{ group }}" data-caption="{{ item.title }} — après">
+                <img src="{{ item.after.url('medium') }}" alt="{{ item.after.altText ?: item.title ~ ', après' }}" loading="lazy"{% if item.after.width %} width="{{ item.after.width }}" height="{{ item.after.height }}"{% endif %}>
+                <span class="before-after-label">Après</span>
+            </a>
+        </div>
+    {% else %}
+        <a href="{{ item.image.url('large') }}" data-lightbox="{{ group }}" data-caption="{{ item.title }}{{ item.description ? ' — ' ~ item.description }}">
+            <img src="{{ item.image.url('medium') }}"
+                 srcset="{{ item.image.url('thumb') }} 400w, {{ item.image.url('medium') }} 1024w"
+                 sizes="(min-width: 960px) 25vw, (min-width: 600px) 33vw, 50vw"
+                 alt="{{ item.image.altText ?: item.title }}" loading="lazy"
+                 {% if item.image.width %}width="{{ item.image.width }}" height="{{ item.image.height }}"{% endif %}>
+        </a>
+    {% endif %}
+    <figcaption>
+        <span class="gallery-title">{{ item.title }}</span>
+        {% if show_details ?? false %}
+            {% if item.description %}<span class="gallery-description">{{ item.description }}</span>{% endif %}
+            {% if item.tags is defined and item.tags is not empty %}
+                <span class="gallery-tags">{% for tag in item.tags %}<a href="/galerie?tag={{ tag|url_encode }}" class="gallery-tag">#{{ tag }}</a>{% endfor %}</span>
+            {% endif %}
+        {% endif %}
+    </figcaption>
+</figure>

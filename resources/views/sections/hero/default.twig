@@ -1,0 +1,15 @@
+{# Gabarit générique de repli (template sans variante « hero »). #}
+<section class="section hero" aria-labelledby="hero-title-{{ section.id }}">
+    <div class="container">
+        {% if eyebrow %}<p class="hero-eyebrow">{{ eyebrow }}</p>{% endif %}
+        <h1 class="hero-title" id="hero-title-{{ section.id }}">{{ title }}</h1>
+        {% if text %}<p class="hero-lead">{{ text }}</p>{% endif %}
+        {% if location %}<p class="hero-location">{{ location }}</p>{% endif %}
+        {% set ctas = [primary_cta, secondary_cta]|filter(c => c and (not (c.target starts with '#') or c.target[1:] in anchors)) %}
+        {% if ctas is not empty %}
+            <div class="button-row">
+                {% for cta in ctas %}<a class="btn {{ loop.first ? 'btn-primary' : 'btn-ghost' }}" href="{{ cta.target }}">{{ cta.label }}</a>{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>

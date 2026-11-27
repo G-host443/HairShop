@@ -1,0 +1,99 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.bookings' %}
+{% block title %}Nouveau rendez-vous{% endblock %}
+
+{% block content %}
+    {% set all_errors = errors() %}
+    {% if all_errors.service is defined %}<div class="alert alert-danger">{{ all_errors.service|first }}</div>{% endif %}
+
+    {% if prefill.id is defined %}
+        <p class="mb-3">Pour <a href="{{ url('admin.customers.show', {id: prefill.id}) }}">{{ prefill.first_name }} {{ prefill.last_name }}</a> : choisissez la prestation, puis le créneau.</p>
+    {% endif %}
+
+    {# Étape 1 : prestation (formulaire GET pour afficher ses tailles et options) #}
+    <form method="get" action="{{ url('admin.bookings.create') }}" class="admin-card mb-4 d-flex flex-wrap gap-2 align-items-end">
+        <div class="flex-grow-1">
+            <label class="form-label" for="c-service">Prestation</label>
+            <select class="form-select" id="c-service" name="service" required>
+                <option value="">Choisir…</option>
+                {% for category in catalog %}
+                    <optgroup label="{{ category.name }}">
+                        {% for s in category.services %}<option value="{{ s.id }}"{{ service and service.id == s.id ? ' selected' }}>{{ s.name }}</option>{% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="date" value="{{ date }}">
+        {% if prefill.id is defined %}<input type="hidden" name="cliente" value="{{ prefill.id }}">{% endif %}
+        <button type="submit" class="btn btn-outline-secondary">{{ service ? 'Changer' : 'Continuer' }}</button>
+    </form>
+
+    {% if service %}
+        <form method="post" action="{{ url('admin.bookings.store') }}" class="row g-4" novalidate>
+            {{ csrf_field() }}
+            <input type="hidden" name="service" value="{{ service.id }}">
+            <div class="col-lg-6">
+                <div class="admin-card h-100">
+                    <h2 class="h6 mb-3">{{ service.name }}</h2>
+                    {% if service.simple is null %}
+                        <label class="form-label" for="c-combo">Taille et longueur</label>
+                        <select class="form-select mb-3" id="c-combo" name="combo" required>
+                            {% for v in service.variants %}
+                                <optgroup label="Taille {{ v.label }}">
+                                    {% for p in v.prices %}{% set value = v.id ~ '-' ~ p.length_id %}<option value="{{ value }}"{{ old('combo') == value ? ' selected' }}>{{ v.label }} — {{ p.length }} — {{ p.kind == 'quote' ? 'devis' : p.price|euros }}</option>{% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                    {% for group in service.option_groups %}
+                        <fieldset class="mb-3">
+                            <legend class="form-label">{{ group.label }}</legend>
+                            {% for o in group.options %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="{{ group.selection == 'single' ? 'radio' : 'checkbox' }}" id="o-{{ o.id }}" name="options[{{ group.selection == 'single' ? 'g' ~ group.id : '' }}]" value="{{ o.id }}">
+                                    <label class="form-check-label" for="o-{{ o.id }}">{{ o.name }} <span class="text-secondary small">{{ o.kind == 'quote' ? 'devis' : (o.price ? '+' ~ o.price|euros : 'offert') }}</span></label>
+                                </div>
+                            {% endfor %}
+                        </fieldset>
+                    {% endfor %}
+                    <div class="row g-2">
+                        <div class="col-7"><label class="form-label" for="c-date">Date</label>
+                            <input type="date" class="form-control{{ errors('date') ? ' is-invalid' }}" id="c-date" name="date" value="{{ old('date', date) }}" required></div>
+                        <div class="col-5"><label class="form-label" for="c-time">Heure</label>
+                            <input type="time" class="form-control{{ errors('time') ? ' is-invalid' }}" id="c-time" name="time" value="{{ old('time', '10:00') }}" step="900" required></div>
+                    </div>
+                    {% for f in ['date', 'time'] %}{% if errors(f) %}<p class="text-danger small mt-2 mb-0">{{ errors(f)|first }}</p>{% endif %}{% endfor %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="c-force" name="force" value="1">
+                        <label class="form-check-label small" for="c-force">Ignorer les horaires d'ouverture et le délai minimum</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="admin-card h-100">
+                    <h2 class="h6 mb-3">Cliente</h2>
+                    <div class="row g-2">
+                        {% for f in [{n: 'first_name', l: 'Prénom', t: 'text'}, {n: 'last_name', l: 'Nom', t: 'text'}, {n: 'phone', l: 'Téléphone', t: 'tel'}, {n: 'email', l: 'E-mail', t: 'email'}] %}
+                            <div class="col-sm-6">
+                                <label class="form-label" for="c-{{ f.n }}">{{ f.l }}</label>
+                                <input type="{{ f.t }}" class="form-control{{ errors(f.n) ? ' is-invalid' }}" id="c-{{ f.n }}" name="{{ f.n }}" value="{{ old(f.n, prefill[f.n] ?? '') }}">
+                                {% if errors(f.n) %}<div class="invalid-feedback">{{ errors(f.n)|first }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <p class="form-text">Une cliente existante est reconnue par son e-mail ou son téléphone.</p>
+                    <div class="row g-2">
+                        <div class="col-sm-6"><label class="form-label" for="c-source">Demande reçue par</label>
+                            <select class="form-select" id="c-source" name="source"><option value="phone">Téléphone</option><option value="whatsapp">WhatsApp</option><option value="admin">Autre</option></select></div>
+                        <div class="col-sm-6"><label class="form-label" for="c-status">Statut</label>
+                            <select class="form-select" id="c-status" name="status"><option value="confirmed">Confirmé</option><option value="pending">En attente</option></select></div>
+                    </div>
+                    <label class="form-label mt-2" for="c-comment">Note</label>
+                    <textarea class="form-control" id="c-comment" name="comment" rows="2" maxlength="1000">{{ old('comment') }}</textarea>
+                    <button type="submit" class="btn btn-primary mt-3">Enregistrer le rendez-vous</button>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

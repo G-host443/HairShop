@@ -1,0 +1,86 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.promotions' %}
+{% block title %}{{ promotion ? promotion.name : 'Nouvelle promotion' }}{% endblock %}
+
+{% block content %}
+    <p class="mb-3"><a href="{{ url('admin.promotions') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Toutes les promotions</a></p>
+
+    {% set selected_ids = old('services') is iterable ? old('services')|map(v => v + 0) : selected %}
+    <form method="post" action="{{ promotion ? url('admin.promotions.update', {id: promotion.id}) : url('admin.promotions.store') }}" novalidate>
+        {{ csrf_field() }}
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="admin-card">
+                    {{ forms.input('name', 'Nom', {required: true, maxlength: 80, value: values.name, help: 'Affiché sur le site, ex. « Offre de rentrée ».'}) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="f-description">Description (facultatif)</label>
+                        <textarea class="form-control{{ errors('description') ? ' is-invalid' }}" id="f-description" name="description" rows="2" maxlength="300">{{ old('description', values.description) }}</textarea>
+                        {% for m in errors('description') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                    </div>
+
+                    <fieldset class="mb-3">
+                        <legend class="form-label">Type de réduction</legend>
+                        {% for value, label in types %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="discount_type" id="t-{{ value }}" value="{{ value }}"{{ old('discount_type', values.discount_type) == value ? ' checked' }}>
+                                <label class="form-check-label" for="t-{{ value }}">{{ label }}{% if value == 'fixed_price' %} <span class="text-secondary small">(prestations à prix unique seulement)</span>{% endif %}</label>
+                            </div>
+                        {% endfor %}
+                        {% for m in errors('discount_type') %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+                    </fieldset>
+                    {{ forms.input('value', 'Valeur', {required: true, value: values.value, help: 'Pourcentage (ex. 15), montant en euros (ex. 10) ou nouveau prix (ex. 40).'}) }}
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">{{ forms.input('first_day', 'Premier jour', {type: 'date', required: true, value: values.first_day}) }}</div>
+                        <div class="col-sm-6">{{ forms.input('last_day', 'Dernier jour (inclus)', {type: 'date', required: true, value: values.last_day}) }}</div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="hidden" name="is_active" value="0">
+                        <input class="form-check-input" type="checkbox" id="f-active" name="is_active" value="1"{{ old('is_active', values.is_active ? '1' : '0') == '1' ? ' checked' }}>
+                        <label class="form-check-label" for="f-active">Active</label>
+                    </div>
+                    {% if bookings_count > 0 %}
+                        <p class="small text-secondary">{{ bookings_count }} rendez-vous pris avec cette promotion : ils gardent le prix réservé, même si vous la modifiez.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <fieldset class="admin-card">
+                    <legend class="h6">Prestations concernées</legend>
+                    <p class="small text-secondary">La réduction s'applique au prix de la coiffure, pas aux options.</p>
+                    {% for m in errors('services') %}<div class="alert alert-danger py-2 small">{{ m }}</div>{% endfor %}
+                    {% for category, services in service_groups %}
+                        <p class="fw-medium small mb-1 mt-3">{{ category }}</p>
+                        {% for s in services %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="s-{{ s.id }}" name="services[]" value="{{ s.id }}"{{ s.id in selected_ids ? ' checked' }}>
+                                <label class="form-check-label" for="s-{{ s.id }}">
+                                    {{ s.name }}
+                                    <span class="text-secondary small">
+                                        — {{ s.pricing_mode == 'matrix' ? 'grille taille × longueur' : (s.price_kind == 'quote' ? 'sur devis' : s.price|euros) }}{{ not s.is_active ? ' · masquée' }}
+                                    </span>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </fieldset>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a class="btn btn-link" href="{{ url('admin.promotions') }}">Annuler</a>
+        </div>
+    </form>
+
+    {% if promotion %}
+        <form method="post" action="{{ url('admin.promotions.destroy', {id: promotion.id}) }}" class="mt-4" data-confirm="Supprimer la promotion « {{ promotion.name }} » ?">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-link text-danger px-0">Supprimer la promotion</button>
+        </form>
+    {% endif %}
+{% endblock %}

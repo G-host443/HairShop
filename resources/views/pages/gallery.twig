@@ -1,0 +1,67 @@
+{# Portfolio public : filtres (catégorie, tag, recherche), grille ou mosaïque, plein écran. #}
+{% macro link(query, changes) %}/galerie{% set merged = query|merge(changes)|filter(v => v is not null and v != '') %}{% if merged is not empty %}?{{ merged|url_encode }}{% endif %}{% endmacro %}
+{% import _self as g %}
+
+<section class="section gallery-page">
+    <div class="container">
+        <form method="get" action="/galerie" class="gallery-search" role="search">
+            <label class="visually-hidden" for="gallery-q">Rechercher une réalisation</label>
+            <input type="search" id="gallery-q" name="q" value="{{ current.q }}" placeholder="Rechercher : knotless, perles, enfant…" maxlength="60">
+            {% if current.category %}<input type="hidden" name="categorie" value="{{ current.category }}">{% endif %}
+            {% if current.view == 'mosaique' %}<input type="hidden" name="vue" value="mosaique">{% endif %}
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+        </form>
+
+        {% if categories is not empty %}
+            <nav aria-label="Catégories de réalisations">
+                <ul class="chip-row chip-row-start gallery-filters">
+                    <li><a class="chip" href="{{ g.link(query, {categorie: null}) }}"{% if not current.category %} aria-current="page"{% endif %}>Toutes</a></li>
+                    {% for c in categories %}
+                        <li><a class="chip" href="{{ g.link(query, {categorie: c.slug}) }}"{% if current.category == c.slug %} aria-current="page"{% endif %}>{{ c.name }} <span class="chip-count">{{ c.count }}</span></a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+
+        {% if tags is not empty %}
+            <p class="gallery-tag-list">
+                <span class="text-muted">Tags :</span>
+                {% for tag in tags %}
+                    <a class="gallery-tag{{ current.tag == tag ? ' is-active' }}" href="{{ g.link(query, {tag: current.tag == tag ? null : tag}) }}"{% if current.tag == tag %} aria-current="true"{% endif %}>#{{ tag }}</a>
+                {% endfor %}
+            </p>
+        {% endif %}
+
+        <div class="gallery-toolbar">
+            <p class="text-muted" role="status">
+                {{ total }} réalisation{{ total > 1 ? 's' }}
+                {% if current.tag or current.q %} · <a href="{{ g.link(query, {tag: null, q: null}) }}">effacer les filtres</a>{% endif %}
+            </p>
+            <p class="gallery-view-switch">
+                <span class="visually-hidden">Affichage :</span>
+                <a href="{{ g.link(query, {vue: null}) }}"{% if current.view == 'grille' %} aria-current="true"{% endif %}>Grille</a>
+                <a href="{{ g.link(query, {vue: 'mosaique'}) }}"{% if current.view == 'mosaique' %} aria-current="true"{% endif %}>Mosaïque</a>
+            </p>
+        </div>
+
+        {% if items is empty %}
+            <p class="notice">Aucune réalisation ne correspond à votre recherche.</p>
+        {% else %}
+            <ul class="{{ current.view == 'mosaique' ? 'gallery-masonry' : 'gallery-grid' }}">
+                {% for item in items %}
+                    <li class="gallery-item">{% include 'partials/gallery-item.twig' with {item: item, group: 'galerie', show_details: true} only %}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if pages > 1 %}
+            <nav class="pagination" aria-label="Pages de la galerie">
+                {% if page > 1 %}<a class="btn btn-ghost" href="{{ g.link(query, {page: page - 1}) }}" rel="prev">Précédentes</a>{% endif %}
+                <span class="text-muted">Page {{ page }} sur {{ pages }}</span>
+                {% if page < pages %}<a class="btn btn-ghost" href="{{ g.link(query, {page: page + 1}) }}" rel="next">Suivantes</a>{% endif %}
+            </nav>
+        {% endif %}
+
+        <p class="section-more"><a class="btn btn-primary" href="/reserver">Réserver ma coiffure</a></p>
+    </div>
+</section>

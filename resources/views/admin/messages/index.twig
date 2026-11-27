@@ -1,0 +1,40 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.messages' %}
+{% block title %}Messages{% endblock %}
+
+{% block content %}
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item"><a class="nav-link{{ not unread_only ? ' active' }}" href="{{ url('admin.messages') }}"{% if not unread_only %} aria-current="page"{% endif %}>Tous</a></li>
+        <li class="nav-item"><a class="nav-link{{ unread_only ? ' active' }}" href="{{ url('admin.messages') }}?filtre=non-lus"{% if unread_only %} aria-current="page"{% endif %}>Non lus <span class="badge {{ unread_count > 0 ? 'text-bg-warning' : 'text-bg-light' }}">{{ unread_count }}</span></a></li>
+    </ul>
+
+    <div class="admin-card">
+        {% if items is empty %}
+            <p class="text-secondary mb-0">{{ unread_only ? 'Aucun message non lu.' : 'Aucun message pour l\'instant. Ils arrivent par le formulaire de la page Contact.' }}</p>
+        {% else %}
+            <ul class="admin-list list-unstyled mb-0">
+                {% for msg in items %}
+                    <li class="admin-list-item{{ not msg.is_read ? ' is-unread' }}">
+                        <span class="admin-list-main">
+                            <a href="{{ url('admin.messages.show', {id: msg.id}) }}" class="{{ not msg.is_read ? 'fw-semibold' : 'fw-medium' }}">
+                                {% if not msg.is_read %}<span class="visually-hidden">Non lu : </span>{% endif %}{{ msg.name }}{% if msg.subject %} — {{ msg.subject }}{% endif %}
+                            </a>
+                            <span class="small text-secondary d-block text-truncate">{{ msg.preview }}</span>
+                        </span>
+                        <span class="small text-secondary text-nowrap">{{ msg.created_at|date_fr('short') }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    {% if pages > 1 %}
+        <nav class="d-flex justify-content-center align-items-center gap-3 mt-3" aria-label="Pages">
+            {% set base = url('admin.messages') ~ '?' ~ (unread_only ? 'filtre=non-lus&' : '') %}
+            {% if page > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}page={{ page - 1 }}">Précédente</a>{% endif %}
+            <span class="small text-secondary">Page {{ page }} sur {{ pages }}</span>
+            {% if page < pages %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}page={{ page + 1 }}">Suivante</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% import 'pages/account/_forms.twig' as f %}
+<section class="section account">
+    <div class="container account-container">
+        {{ f.alerts() }}
+        {% include 'pages/account/_nav.twig' %}
+        {% if services is empty %}
+            <div class="card account-empty">
+                <p>Aucune coiffure en favori pour l'instant. Ajoutez-en depuis la fiche d'une prestation (bouton « Ajouter à mes favoris »).</p>
+                <a class="btn btn-primary" href="/prestations">Voir les prestations</a>
+            </div>
+        {% else %}
+            <ul class="service-cards">
+                {% for s in services %}
+                    <li class="card account-favorite">
+                        <p class="text-muted">{{ s.category }}</p>
+                        <h2 class="service-card-name"><a href="/prestations/{{ s.slug }}">{{ s.name }}</a></h2>
+                        <p class="service-card-price">{{ s.price_label }}</p>
+                        <div class="booking-actions">
+                            <form method="post" action="/compte/favoris/{{ s.id }}">
+                                {{ csrf_field() }}
+                                <input type="hidden" name="return_to" value="/compte/favoris">
+                                <button type="submit" class="btn btn-ghost btn-sm">Retirer</button>
+                            </form>
+                            <a class="btn btn-primary btn-sm" href="/reserver?service={{ s.id }}">Réserver</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</section>

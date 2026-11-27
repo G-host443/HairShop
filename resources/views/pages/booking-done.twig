@@ -1,0 +1,40 @@
+{% set step = 'done' %}
+<section class="section booking">
+    <div class="container">
+        {% include 'pages/_booking_steps.twig' %}
+
+        <div class="booking-done card">
+            <p class="booking-done-mark" aria-hidden="true">✓</p>
+            <h2 class="booking-title">{{ booking.status == 'confirmed' ? 'Votre rendez-vous est confirmé' : 'Votre demande est bien enregistrée' }}</h2>
+            <p class="booking-lead">
+                {% if booking.status == 'confirmed' %}
+                    À très bientôt, {{ booking.first_name }} !
+                {% else %}
+                    Merci {{ booking.first_name }} ! Je vérifie la demande et je reviens vers vous rapidement pour la confirmer{{ booking.estimated_total is null ? ' avec le prix' }}.
+                {% endif %}
+            </p>
+
+            <dl class="booking-summary-list booking-done-list">
+                <div><dt>Référence</dt><dd><strong>{{ booking.reference }}</strong></dd></div>
+                <div><dt>Prestation</dt><dd>{{ booking.service_label }}{% for o in options %} + {{ o.label|lower }}{% endfor %}</dd></div>
+                <div><dt>Date</dt><dd>{{ booking.starts_at|date_fr('datetime')|capitalize }}</dd></div>
+                <div><dt>Fin estimée</dt><dd>{{ booking.ends_at|date_fr('time') }}</dd></div>
+                <div><dt>Prix</dt><dd>{{ booking.estimated_total is null ? 'Sur devis (confirmé avant le rendez-vous)' : booking.estimated_total|euros }}</dd></div>
+            </dl>
+
+            {% if is_home_location %}
+                <p class="notice">L'adresse exacte vous sera communiquée avec la confirmation du rendez-vous.</p>
+            {% endif %}
+
+            <div class="booking-manage-box">
+                <p><strong>Gardez ce lien</strong> pour consulter ou annuler votre rendez-vous :</p>
+                <p><a class="booking-manage-link" href="{{ manage_url }}">{{ absolute_url(manage_url) }}</a></p>
+            </div>
+
+            <div class="booking-actions booking-actions-center">
+                <a class="btn btn-ghost" href="/">Retour à l'accueil</a>
+                <a class="btn btn-primary" href="{{ manage_url }}">Voir mon rendez-vous</a>
+            </div>
+        </div>
+    </div>
+</section>

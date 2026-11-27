@@ -1,0 +1,7 @@
+<section class="section rich-text" {% if section.anchor %}id="{{ section.anchor }}"{% endif %}>
+    <div class="container prose">
+        {% if title %}<h2 class="section-title">{{ title }}</h2>{% endif %}
+        {# HTML produit par SimpleMarkup à partir d'un texte échappé. #}
+        {{ html|raw }}
+    </div>
+</section>

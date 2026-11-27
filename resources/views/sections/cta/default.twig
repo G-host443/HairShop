@@ -1,0 +1,9 @@
+{% if not (button.target starts with '#') or button.target[1:] in anchors %}
+<section class="section cta-banner" {% if section.anchor %}id="{{ section.anchor }}"{% endif %}>
+    <div class="container">
+        <h2 class="section-title">{{ title }}</h2>
+        {% if text %}<p class="section-intro">{{ text }}</p>{% endif %}
+        <a class="btn btn-primary" href="{{ button.target }}">{{ button.label }}</a>
+    </div>
+</section>
+{% endif %}

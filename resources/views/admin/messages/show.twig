@@ -1,0 +1,37 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.messages' %}
+{% block title %}Message de {{ message.name }}{% endblock %}
+
+{% block content %}
+    <p class="mb-3"><a href="{{ url('admin.messages') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Tous les messages</a></p>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <article class="admin-card">
+                {% if message.subject %}<h2 class="h5">{{ message.subject }}</h2>{% endif %}
+                <p class="small text-secondary">Reçu le {{ message.created_at|date_fr('datetime') }}</p>
+                <div class="admin-message-body">{{ message.body|nl2br }}</div>
+            </article>
+        </div>
+        <div class="col-lg-4">
+            <div class="admin-card mb-4">
+                <p class="fw-medium mb-1">{{ message.name }}</p>
+                <p class="mb-3 small">
+                    <a href="mailto:{{ message.email }}?subject={{ ('Re: ' ~ (message.subject ?: 'votre message'))|url_encode }}">{{ message.email }}</a>
+                    {% if message.phone %}<br><a href="tel:{{ message.phone }}">{{ message.phone }}</a>{% endif %}
+                </p>
+                <a class="btn btn-primary btn-sm w-100 mb-2" href="mailto:{{ message.email }}?subject={{ ('Re: ' ~ (message.subject ?: 'votre message'))|url_encode }}"><i class="bi bi-reply" aria-hidden="true"></i> Répondre par e-mail</a>
+                {% if customer_id %}<a class="btn btn-outline-secondary btn-sm w-100 mb-2" href="{{ url('admin.customers.show', {id: customer_id}) }}">Voir la fiche cliente</a>{% endif %}
+                <form method="post" action="{{ url('admin.messages.unread', {id: message.id}) }}">
+                    {{ csrf_field() }}
+                    <button type="submit" class="btn btn-link btn-sm px-0">Marquer comme non lu</button>
+                </form>
+            </div>
+            <form method="post" action="{{ url('admin.messages.destroy', {id: message.id}) }}" data-confirm="Supprimer définitivement ce message ?">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-link text-danger px-0">Supprimer le message</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

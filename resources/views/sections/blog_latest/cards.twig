@@ -1,0 +1,14 @@
+<section class="section blog-latest" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="blog-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="blog-title-{{ section.id }}">{{ title }}</h2>
+            {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        </header>
+        <ul class="blog-grid">
+            {% for post in posts %}
+                <li class="reveal">{% include 'partials/blog-card.twig' with {post: post, cover: post.cover_media_id ? (covers[post.cover_media_id] ?? null) : null, heading: 'h3'} only %}</li>
+            {% endfor %}
+        </ul>
+        <p class="section-more reveal"><a class="btn btn-ghost" href="/blog">Tous les articles</a></p>
+    </div>
+</section>

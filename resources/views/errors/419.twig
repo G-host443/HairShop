@@ -1,0 +1,10 @@
+{% extends 'layouts/system.twig' %}
+
+{% block title %}Session expirée — {{ app.name }}{% endblock %}
+
+{% block content %}
+    <p class="sys-code">419</p>
+    <h1 class="sys-title">Votre session a expiré</h1>
+    <p class="sys-lead">Pour votre sécurité, le formulaire n'a pas été envoyé. Revenez en arrière, rechargez la page et réessayez.</p>
+    <p><a class="sys-btn" href="/">Retour à l'accueil</a></p>
+{% endblock %}

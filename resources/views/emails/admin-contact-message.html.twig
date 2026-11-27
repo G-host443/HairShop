@@ -1,0 +1,8 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}{{ message.body|slice(0, 90) }}{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:22px;color:#17140F;">Nouveau message</h1>
+    <p><strong>{{ message.name }}</strong><br>{{ message.email }}{% if message.phone %}<br>{{ message.phone }}{% endif %}</p>
+    <p style="padding:12px;background:#F6EFDF;border-radius:8px;">{{ message.body|nl2br }}</p>
+    <p style="font-size:13px;color:#6D5B54;">Répondez directement à cet e-mail pour écrire à {{ message.name }}.</p>
+{% endblock %}

@@ -1,0 +1,35 @@
+<header class="site-header site-header--{{ theme_layout('header') ?: 'static' }}{{ theme_layout('header') == 'sticky' ? ' is-sticky' }}" data-site-header>
+    <div class="container site-header-inner">
+        <a class="brand" href="/" aria-label="{{ site_name }} — accueil">
+            {% if logo_id and media_url(logo_id) %}
+                <img class="brand-logo" src="{{ media_url(logo_id, 'thumb') }}" alt="" width="48" height="48">
+            {% endif %}
+            <span class="brand-name">{{ site_name }}</span>
+        </a>
+
+        {% if setting('booking.online_enabled', true) and page.slug != 'reserver' %}
+            <a class="btn btn-primary header-cta" href="/reserver">Réserver</a>
+        {% endif %}
+
+        {% if navigation is not empty or has_contact_page %}
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+                <span class="nav-toggle-bar" aria-hidden="true"></span>
+                <span class="visually-hidden">Menu</span>
+            </button>
+
+            <nav class="site-nav" id="site-nav" aria-label="Navigation principale" data-site-nav>
+                <ul>
+                    {% for item in navigation %}
+                        <li><a href="{{ item.url }}">{{ item.label }}</a></li>
+                    {% endfor %}
+                    {% if has_contact_page and not (page.slug == 'contact') %}
+                        {% set has_contact_anchor = navigation|filter(i => i.url ends with '#contact')|length > 0 %}
+                        {% if not has_contact_anchor %}
+                            <li><a href="/contact">Contact</a></li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</header>

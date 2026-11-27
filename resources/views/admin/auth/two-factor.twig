@@ -1,0 +1,15 @@
+{% extends 'admin/layouts/auth.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% block title %}Code de vérification{% endblock %}
+{% block heading %}Double authentification{% endblock %}
+
+{% block content %}
+    <p>Saisissez le code à 6 chiffres affiché par votre application d'authentification.</p>
+    <form method="post" action="{{ url('admin.login.two_factor.verify') }}" novalidate>
+        {{ csrf_field() }}
+        {{ forms.input('code', 'Code', {autocomplete: 'one-time-code', required: true, autofocus: true, maxlength: 11, help: 'Sans votre téléphone : saisissez un de vos codes de secours (XXXXX-XXXXX).'}) }}
+        <button type="submit" class="btn btn-primary w-100">Valider</button>
+    </form>
+    <p class="text-center mt-3 mb-0"><a href="{{ url('admin.login') }}">Revenir à la connexion</a></p>
+{% endblock %}

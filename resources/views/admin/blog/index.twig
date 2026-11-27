@@ -1,0 +1,68 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.blog' %}
+{% block title %}Blog{% endblock %}
+
+{% block actions %}
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url('admin.blog.taxonomy') }}">Catégories et tags</a>
+        <a class="btn btn-primary" href="{{ url('admin.blog.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Nouvel article</a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+        <div>
+            <label class="form-label small mb-1" for="b-q">Rechercher</label>
+            <input type="search" class="form-control form-control-sm" id="b-q" name="q" value="{{ filters.q }}" placeholder="Titre…">
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="b-status">Statut</label>
+            <select class="form-select form-select-sm" id="b-status" name="statut">
+                <option value="">Tous</option>
+                {% for key, s in status_labels %}<option value="{{ key }}"{{ filters.status == key ? ' selected' }}>{{ s[0] }} ({{ counts[key] }})</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="b-cat">Catégorie</label>
+            <select class="form-select form-select-sm" id="b-cat" name="categorie">
+                <option value="">Toutes</option>
+                {% for c in categories %}<option value="{{ c.id }}"{{ filters.category == c.id ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrer</button>
+        <a class="small ms-auto" href="/blog" target="_blank" rel="noopener">Voir le blog <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+    </form>
+
+    <div class="admin-card">
+        {% if posts is empty %}
+            <p class="text-secondary mb-0">Aucun article{{ filters.q or filters.status or filters.category ? ' ne correspond à ces filtres' }}.</p>
+        {% else %}
+            <ul class="admin-list list-unstyled mb-0">
+                {% for p in posts %}
+                    {% set cover = p.cover_media_id ? (covers[p.cover_media_id] ?? null) : null %}
+                    {% set status = status_labels[p.status] %}
+                    <li class="admin-list-item">
+                        <span class="admin-gallery-thumb">{% if cover %}<img src="{{ cover.url('thumb') }}" alt="" loading="lazy">{% endif %}</span>
+                        <span class="admin-list-main">
+                            <a href="{{ url('admin.blog.edit', {id: p.id}) }}" class="fw-medium">{{ p.title }}</a>
+                            <span class="small text-secondary d-block">
+                                {{ p.category_name ?? 'Sans catégorie' }}
+                                {% if p.status == 'draft' %} · modifié le {{ p.updated_at|date_fr('short') }}
+                                {% else %} · {{ p.status == 'scheduled' and not p.is_live ? 'en ligne le' : 'publié le' }} {{ p.published_at|date_fr('datetime') }}{% endif %}
+                            </span>
+                        </span>
+                        <span class="admin-list-badges">
+                            <span class="badge text-bg-{{ status[1] }}">{{ status[0] }}</span>
+                            {% if p.status == 'scheduled' and p.is_live %}<span class="badge text-bg-success">En ligne</span>{% endif %}
+                        </span>
+                        <span class="admin-list-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.blog.preview', {id: p.id}) }}" target="_blank" rel="noopener"><i class="bi bi-eye" aria-hidden="true"></i><span class="visually-hidden"> Aperçu de {{ p.title }}</span></a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.blog.edit', {id: p.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden"> Modifier {{ p.title }}</span></a>
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+{% endblock %}

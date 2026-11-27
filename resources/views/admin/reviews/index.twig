@@ -1,0 +1,79 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.reviews' %}
+{% block title %}Avis{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-outline-primary" href="{{ url('admin.reviews.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Ajouter un avis reçu ailleurs</a>
+{% endblock %}
+
+{% block content %}
+    <p class="text-secondary">
+        Les avis déposés sur le site attendent votre accord avant d'être publiés.
+        {% if stats.count > 0 %}Note moyenne publiée : <strong>{{ stats.average|number_format(1, ',') }}/5</strong> sur {{ stats.count }} avis.{% endif %}
+    </p>
+
+    <ul class="nav nav-tabs mb-4">
+        {% for key, label in tabs %}
+            <li class="nav-item">
+                <a class="nav-link{{ tab == key ? ' active' }}" href="{{ url('admin.reviews') }}?statut={{ key }}"{% if tab == key %} aria-current="page"{% endif %}>
+                    {{ label }} <span class="badge {{ key == 'pending' and counts[key] > 0 ? 'text-bg-warning' : 'text-bg-light' }}">{{ counts[key] }}</span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    {% if reviews is empty %}
+        <div class="admin-card"><p class="text-secondary mb-0">{{ tab == 'pending' ? 'Aucun avis en attente.' : 'Aucun avis.' }}</p></div>
+    {% else %}
+        <div class="row g-3">
+            {% for r in reviews %}
+                {% set photo = r.photo_media_id ? (photos[r.photo_media_id] ?? null) : null %}
+                <div class="col-lg-6">
+                    <article class="admin-card h-100 d-flex flex-column" aria-label="Avis de {{ r.author_name }}">
+                        <div class="d-flex gap-3">
+                            {% if photo %}<img src="{{ photo.url('thumb') }}" alt="" class="admin-review-photo">{% endif %}
+                            <div class="flex-grow-1">
+                                <p class="mb-1">
+                                    <strong>{{ r.author_name }}</strong>
+                                    <span class="admin-stars" aria-label="{{ r.rating }} sur 5">{{ '★'|repeat(r.rating) }}<span class="text-secondary">{{ '★'|repeat(5 - r.rating) }}</span></span>
+                                    {% if r.is_featured %}<span class="badge text-bg-warning ms-1">En avant</span>{% endif %}
+                                </p>
+                                <p class="small text-secondary mb-2">
+                                    {{ r.created_at|date_fr('short') }}
+                                    {% if r.booking_reference %} · <a href="{{ url('admin.bookings.show', {id: r.booking_id}) }}">{{ r.booking_reference }}</a> — {{ r.service_label }}{% elseif r.booking_id is null %} · sans rendez-vous lié{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <p class="mb-3 admin-review-comment">{{ r.comment|nl2br }}</p>
+                        <div class="d-flex flex-wrap gap-2 mt-auto">
+                            {% if r.status != 'approved' %}
+                                <form method="post" action="{{ url('admin.reviews.moderate', {id: r.id, decision: 'approuver'}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg" aria-hidden="true"></i> Publier</button>
+                                </form>
+                            {% endif %}
+                            {% if r.status != 'rejected' %}
+                                <form method="post" action="{{ url('admin.reviews.moderate', {id: r.id, decision: 'refuser'}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">{{ r.status == 'approved' ? 'Retirer du site' : 'Refuser' }}</button>
+                                </form>
+                            {% endif %}
+                            {% if r.status == 'approved' %}
+                                <form method="post" action="{{ url('admin.reviews.feature', {id: r.id}) }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-star{{ r.is_featured ? '-fill' }}" aria-hidden="true"></i> {{ r.is_featured ? 'Ne plus mettre en avant' : 'Mettre en avant' }}</button>
+                                </form>
+                            {% endif %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.reviews.edit', {id: r.id}) }}">Nom et photo</a>
+                            <form method="post" action="{{ url('admin.reviews.destroy', {id: r.id}) }}" class="ms-auto" data-confirm="Supprimer définitivement cet avis ?">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-sm btn-link text-danger"><i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden"> Supprimer l'avis de {{ r.author_name }}</span></button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

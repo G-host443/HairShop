@@ -1,0 +1,97 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.gallery' %}
+{% block title %}{{ item ? item.title : 'Nouvelle réalisation' }}{% endblock %}
+
+{% macro media_field(name, label, image, help) %}
+    <span class="form-label d-block" id="{{ name }}-label">{{ label }}</span>
+    <div class="admin-media-field mb-1" data-media-field>
+        <input type="hidden" name="{{ name }}" value="{{ image ? image.id : '' }}" data-media-input>
+        <div class="admin-media-field-preview" data-media-preview>
+            {% if image %}<img src="{{ image.url('thumb') }}" alt="{{ image.altText }}">{% else %}<span class="text-secondary small">Aucune photo</span>{% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="{{ name }}-label">Choisir dans la bibliothèque</button>
+            <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ image ? '' : ' hidden' }}>Retirer</button>
+        </div>
+    </div>
+    {% for m in errors(name) %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+    {% if help %}<p class="form-text mb-3">{{ help }}</p>{% else %}<div class="mb-3"></div>{% endif %}
+{% endmacro %}
+
+{% block content %}
+    <p class="mb-3"><a href="{{ url('admin.gallery') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Toute la galerie</a></p>
+
+    <form method="post" action="{{ item ? url('admin.gallery.update', {id: item.id}) : url('admin.gallery.store') }}" novalidate>
+        {{ csrf_field() }}
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="admin-card">
+                    {{ _self.media_field('media_id', 'Photo *', image, 'Pensez à renseigner le texte alternatif de la photo dans la bibliothèque (description pour les lecteurs d\'écran).') }}
+                    {{ _self.media_field('after_media_id', 'Photo « après » (facultatif)', after, 'Avec une deuxième photo, la réalisation s\'affiche en avant / après : la première photo est alors « avant ».') }}
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="admin-card">
+                    {{ forms.input('title', 'Titre', {required: true, maxlength: 100, value: item.title ?? ''}) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="f-description">Description (facultatif)</label>
+                        <textarea class="form-control{{ errors('description') ? ' is-invalid' }}" id="f-description" name="description" rows="3" maxlength="500">{{ old('description', item.description ?? '') }}</textarea>
+                        {% for m in errors('description') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="f-category">Catégorie</label>
+                            <select class="form-select" id="f-category" name="category_id">
+                                <option value="">Celle de la prestation</option>
+                                {% for c in categories %}<option value="{{ c.id }}"{{ old('category_id', item.category_id ?? '')|default('') == c.id ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="f-service">Prestation</label>
+                            <select class="form-select" id="f-service" name="service_id">
+                                <option value="">Aucune</option>
+                                {% for category, services in service_groups %}
+                                    <optgroup label="{{ category }}">
+                                        {% for s in services %}<option value="{{ s.id }}"{{ old('service_id', item.service_id ?? '')|default('') == s.id ? ' selected' }}>{{ s.name }}</option>{% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">La photo apparaîtra aussi sur la fiche de la prestation.</div>
+                        </div>
+                    </div>
+                    {{ forms.input('tags', 'Tags', {value: (item.tags ?? [])|join(', '), help: 'Séparés par des virgules, ex. : mi-dos, perles, enfant. Ils servent de filtres sur la galerie.'}) }}
+
+                    <div class="form-check">
+                        <input type="hidden" name="is_published" value="0">
+                        <input class="form-check-input" type="checkbox" id="f-published" name="is_published" value="1"{{ old('is_published', (item.is_published ?? true) ? '1' : '0') == '1' ? ' checked' }}>
+                        <label class="form-check-label" for="f-published">Publiée sur le site</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="hidden" name="is_featured" value="0">
+                        <input class="form-check-input" type="checkbox" id="f-featured" name="is_featured" value="1"{{ old('is_featured', (item.is_featured ?? false) ? '1' : '0') == '1' ? ' checked' }}>
+                        <label class="form-check-label" for="f-featured">Mise en avant (affichée en premier et sur l'accueil)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a class="btn btn-link" href="{{ url('admin.gallery') }}">Annuler</a>
+        </div>
+    </form>
+
+    {% if item %}
+        <form method="post" action="{{ url('admin.gallery.destroy', {id: item.id}) }}" class="mt-4" data-confirm="Supprimer cette réalisation de la galerie ? Les photos restent dans la bibliothèque.">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-link text-danger px-0">Supprimer la réalisation</button>
+        </form>
+    {% endif %}
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+{% endblock %}

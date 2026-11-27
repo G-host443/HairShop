@@ -1,0 +1,34 @@
+{% import 'pages/account/_forms.twig' as f %}
+<section class="section account">
+    <div class="container">
+        <div class="account-auth account-auth-wide card">
+            {{ f.alerts() }}
+            <h2 class="booking-title">Créer mon espace</h2>
+            <p class="booking-lead">Si vous avez déjà réservé avec la même adresse e-mail, vos rendez-vous apparaîtront dans votre espace dès que l'adresse sera confirmée.</p>
+            <form method="post" action="/compte/inscription" class="booking-form" novalidate>
+                {{ csrf_field() }}
+                <div class="form-trap" aria-hidden="true"><label for="a-website">Site web</label><input type="text" id="a-website" name="website" tabindex="-1" autocomplete="off"></div>
+                <div class="booking-fields">
+                    {{ f.field('first_name', 'Prénom', {autocomplete: 'given-name', required: true}) }}
+                    {{ f.field('last_name', 'Nom', {autocomplete: 'family-name', required: true}) }}
+                    {{ f.field('email', 'Adresse e-mail', {type: 'email', autocomplete: 'email', required: true}) }}
+                    {{ f.field('phone', 'Téléphone (facultatif)', {type: 'tel', autocomplete: 'tel'}) }}
+                    {{ f.field('password', 'Mot de passe', {type: 'password', autocomplete: 'new-password', required: true, help: 'Au moins ' ~ min_length ~ ' caractères, avec au moins trois types parmi : minuscules, majuscules, chiffres, symboles.'}) }}
+                    {{ f.field('password_confirmation', 'Confirmer le mot de passe', {type: 'password', autocomplete: 'new-password', required: true}) }}
+                </div>
+                {% set consent_errors = errors('consent') %}
+                <div class="form-field form-check">
+                    <input type="checkbox" id="a-consent" name="consent" value="1" required{{ old('consent') ? ' checked' }}{% if consent_errors %} aria-invalid="true" aria-describedby="a-consent-error"{% endif %}>
+                    <label for="a-consent">J'accepte que mes informations soient conservées pour gérer mes rendez-vous. Je peux télécharger ou supprimer mes données à tout moment depuis mon espace.</label>
+                    {% if consent_errors %}<p class="form-error" id="a-consent-error">Merci de cocher cette case pour créer votre espace.</p>{% endif %}
+                </div>
+                <div class="form-field form-check">
+                    <input type="checkbox" id="a-marketing" name="marketing" value="1"{{ old('marketing') ? ' checked' }}>
+                    <label for="a-marketing">J'accepte de recevoir des nouvelles et offres (facultatif).</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Créer mon espace</button>
+            </form>
+            <p class="account-links">Déjà un espace ? <a href="/compte/connexion">Se connecter</a></p>
+        </div>
+    </div>
+</section>

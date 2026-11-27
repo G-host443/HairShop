@@ -1,0 +1,43 @@
+{% import 'pages/account/_forms.twig' as f %}
+{% macro booking_card(b) %}
+    <li class="account-booking card">
+        <div>
+            <p class="account-booking-date">{{ b.starts_at|date_fr('datetime')|capitalize }}</p>
+            <p class="account-booking-service">{{ b.service_label }}</p>
+            <p class="text-muted">Réf. {{ b.reference }} · <span class="booking-status booking-status-{{ b.status }}">{{ b.status_label }}</span></p>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="/compte/rendez-vous/{{ b.reference }}">Détails{% if b.can_cancel ?? false %} ou annuler{% endif %}</a>
+    </li>
+{% endmacro %}
+{% import _self as m %}
+
+<section class="section account">
+    <div class="container account-container">
+        {{ f.alerts() }}
+        <p class="account-hello">Bonjour {{ user.firstName }}</p>
+        {% include 'pages/account/_nav.twig' %}
+
+        {% if not user.isEmailVerified %}
+            <div class="notice account-verify">
+                <p>Confirmez votre adresse <strong>{{ user.email }}</strong> grâce au lien reçu par e-mail : vos rendez-vous déjà pris avec cette adresse apparaîtront alors ici.</p>
+                <form method="post" action="/compte/verifier/renvoyer">{{ csrf_field() }}<button type="submit" class="btn btn-ghost btn-sm">Renvoyer le lien</button></form>
+            </div>
+        {% endif %}
+
+        <h2 class="booking-subtitle">À venir</h2>
+        {% if upcoming is empty %}
+            <div class="card account-empty">
+                <p>Aucun rendez-vous à venir.</p>
+                <a class="btn btn-primary" href="/reserver">Réserver une coiffure</a>
+            </div>
+        {% else %}
+            <ul class="account-bookings">{% for b in upcoming %}{{ m.booking_card(b) }}{% endfor %}</ul>
+            <p><a class="btn btn-primary" href="/reserver">Prendre un nouveau rendez-vous</a></p>
+        {% endif %}
+
+        {% if past is not empty %}
+            <h2 class="booking-subtitle">Historique</h2>
+            <ul class="account-bookings is-past">{% for b in past %}{{ m.booking_card(b) }}{% endfor %}</ul>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,71 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.bookings' %}
+{% set tab = 'calendar' %}
+{% block title %}Calendrier{% endblock %}
+
+{% macro booking_chip(b) %}
+    <a class="admin-cal-booking" href="{{ url('admin.bookings.show', {id: b.id}) }}" style="--status: {{ b.status_color }}">
+        <span class="admin-cal-time">{{ b.starts_at|date_fr('time') }}</span>
+        <span class="admin-cal-name">{{ b.first_name }} {{ b.last_name|first }}.</span>
+        <span class="admin-cal-service">{{ b.service_label }}</span>
+        <span class="visually-hidden">— {{ b.status_label }}</span>
+    </a>
+{% endmacro %}
+
+{% block content %}
+    {% import _self as m %}
+    {% include 'admin/bookings/_tabs.twig' %}
+
+    {% set extra = show_cancelled ? {annulees: '1'} : {} %}
+    <div class="admin-cal-toolbar">
+        <div class="btn-group" role="group" aria-label="Vue">
+            {% for v, label in {jour: 'Jour', semaine: 'Semaine', mois: 'Mois'} %}
+                <a class="btn btn-sm {{ view == v ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ url('admin.bookings.calendar', {vue: v, date: date}|merge(extra)) }}"{% if view == v %} aria-current="true"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.bookings.calendar', {vue: view, date: prev}|merge(extra)) }}" aria-label="Période précédente"><i class="bi bi-chevron-left" aria-hidden="true"></i></a>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.bookings.calendar', {vue: view, date: today}|merge(extra)) }}">Aujourd'hui</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.bookings.calendar', {vue: view, date: next}|merge(extra)) }}" aria-label="Période suivante"><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+        </div>
+        <h2 class="h5 mb-0">
+            {% if view == 'mois' %}{{ date|date_fr('month')|capitalize }}
+            {% elseif view == 'jour' %}{{ date|date_fr|capitalize }}
+            {% else %}Semaine du {{ (days|first).date|date_fr('day') }}{% endif %}
+        </h2>
+        <a class="small" href="{{ url('admin.bookings.calendar', {vue: view, date: date}|merge(show_cancelled ? {} : {annulees: '1'})) }}">{{ show_cancelled ? 'Masquer' : 'Afficher' }} les annulés</a>
+    </div>
+
+    {% if view == 'mois' %}
+        <div class="admin-card p-2">
+            <table class="admin-cal-month">
+                <thead><tr>{% for d in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                    {% for week in weeks %}
+                        <tr>
+                            {% for day in week %}
+                                <td class="{{ day.in_month ? '' : 'is-outside' }}{{ day.date == today ? ' is-today' }}">
+                                    <a class="admin-cal-daynum" href="{{ url('admin.bookings.calendar', {vue: 'jour', date: day.date}) }}">{{ day.date|date('j') }}</a>
+                                    {% for b in day.bookings|slice(0, 3) %}{{ m.booking_chip(b) }}{% endfor %}
+                                    {% if day.bookings|length > 3 %}<a class="small" href="{{ url('admin.bookings.calendar', {vue: 'jour', date: day.date}) }}">+ {{ day.bookings|length - 3 }} autre(s)</a>{% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="admin-cal-days{{ view == 'jour' ? ' is-single' }}">
+            {% for day in days %}
+                <section class="admin-card admin-cal-day{{ day.date == today ? ' is-today' }}" aria-labelledby="d-{{ day.date }}">
+                    <h3 class="admin-cal-dayhead" id="d-{{ day.date }}">
+                        <a href="{{ url('admin.bookings.calendar', {vue: 'jour', date: day.date}) }}">{{ day.date|date_fr('day')|capitalize }}</a>
+                    </h3>
+                    {% for b in day.bookings %}{{ m.booking_chip(b) }}{% else %}<p class="small text-secondary mb-0">Aucun rendez-vous</p>{% endfor %}
+                </section>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

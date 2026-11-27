@@ -1,0 +1,188 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.pages' %}
+{% set is_live = page.status == 'published' %}
+{% set has_changes = page.has_unpublished_changes %}
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block actions %}
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url('admin.pages.preview', {id: page.id}) }}"><i class="bi bi-eye" aria-hidden="true"></i> Aperçu</a>
+        {% if has_changes or not is_live %}
+            <form method="post" action="{{ url('admin.pages.publish', {id: page.id}) }}">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-upload" aria-hidden="true"></i> {{ is_live ? 'Publier les modifications' : 'Publier la page' }}</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <p class="mb-3">
+        <a href="{{ url('admin.pages') }}" class="small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Toutes les pages</a>
+    </p>
+
+    <div class="admin-card mb-4 d-flex flex-wrap align-items-center gap-3">
+        <span>
+            {% if is_live %}
+                <span class="badge text-bg-success">En ligne</span>
+                <a href="{{ public_url }}" target="_blank" rel="noopener" class="small ms-1">{{ public_url }} <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+            {% else %}
+                <span class="badge text-bg-secondary">Brouillon</span> <span class="small text-secondary ms-1">Pas encore visible sur le site.</span>
+            {% endif %}
+        </span>
+        {% if has_changes and is_live %}
+            <span class="small text-warning-emphasis"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Des modifications attendent d'être publiées.</span>
+            <form method="post" action="{{ url('admin.pages.discard', {id: page.id}) }}" class="ms-auto" data-confirm="Annuler toutes les modifications non publiées de cette page ?">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Annuler les modifications</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="admin-card">
+                <h2 class="h6 mb-1">Sections</h2>
+                {% set active_sections = sections|filter(s => not s.draft_deleted) %}
+                {% set removed_sections = sections|filter(s => s.draft_deleted) %}
+                {% if active_sections is empty %}
+                    <p class="text-secondary">Aucune section : ajoutez-en une ci-dessous.</p>
+                {% else %}
+                    <p class="small text-secondary"><i class="bi bi-arrows-move" aria-hidden="true"></i> Faites glisser pour changer l'ordre. Les changements restent en brouillon jusqu'à la publication.</p>
+                    <ul class="admin-list list-unstyled mb-0" data-sortable="{{ url('admin.pages.sections.reorder', {id: page.id}) }}">
+                        {% for s in active_sections %}
+                            <li class="admin-list-item{{ not s.is_visible ? ' is-muted' }}" data-id="{{ s.id }}">
+                                <span class="admin-drag" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="admin-list-main">
+                                    {% if s.known %}
+                                        <a href="{{ url('admin.pages.sections.edit', {id: page.id, sectionId: s.id}) }}" class="fw-medium">{{ s.label }}</a>
+                                    {% else %}
+                                        <span class="fw-medium">{{ s.label }}</span> <span class="small text-danger">(type inconnu)</span>
+                                    {% endif %}
+                                    <span class="small text-secondary d-block">
+                                        {{ s.summary ?: '—' }}{% if s.anchor %} · #{{ s.anchor }}{% endif %}
+                                    </span>
+                                </span>
+                                <span class="admin-list-badges">
+                                    {% if s.is_new %}<span class="badge text-bg-info">Nouvelle</span>{% elseif s.is_modified %}<span class="badge text-bg-warning">Modifiée</span>{% endif %}
+                                    {% if not s.is_visible %}<span class="badge text-bg-secondary">Masquée</span>{% endif %}
+                                </span>
+                                <span class="admin-list-actions">
+                                    <form method="post" action="{{ url('admin.pages.sections.toggle', {id: page.id, sectionId: s.id}) }}">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ s.is_visible ? 'Masquer' : 'Afficher' }}">
+                                            <i class="bi bi-{{ s.is_visible ? 'eye-slash' : 'eye' }}" aria-hidden="true"></i><span class="visually-hidden"> {{ s.is_visible ? 'Masquer' : 'Afficher' }} la section {{ s.label }}</span>
+                                        </button>
+                                    </form>
+                                    {% if s.known %}
+                                        <form method="post" action="{{ url('admin.pages.sections.duplicate', {id: page.id, sectionId: s.id}) }}">
+                                            {{ csrf_field() }}
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Dupliquer"><i class="bi bi-copy" aria-hidden="true"></i><span class="visually-hidden"> Dupliquer la section {{ s.label }}</span></button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ url('admin.pages.sections.destroy', {id: page.id, sectionId: s.id}) }}" data-confirm="Retirer la section « {{ s.label }} » ?">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Retirer"><i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden"> Retirer la section {{ s.label }}</span></button>
+                                    </form>
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if removed_sections is not empty %}
+                    <h3 class="h6 mt-4 mb-2 text-secondary">Retirées à la prochaine publication</h3>
+                    <ul class="admin-list list-unstyled mb-0">
+                        {% for s in removed_sections %}
+                            <li class="admin-list-item is-muted">
+                                <span class="admin-list-main"><span class="text-decoration-line-through">{{ s.label }}</span> <span class="small text-secondary">{{ s.summary }}</span></span>
+                                <span class="admin-list-actions">
+                                    <form method="post" action="{{ url('admin.pages.sections.restore', {id: page.id, sectionId: s.id}) }}">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Restaurer</button>
+                                    </form>
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <form method="post" action="{{ url('admin.pages.sections.store', {id: page.id}) }}" class="d-flex flex-wrap gap-2 align-items-end mt-4 pt-3 border-top">
+                    {{ csrf_field() }}
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="new-section-type">Ajouter une section</label>
+                        <select class="form-select" id="new-section-type" name="type">
+                            {% for value, label in types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Ajouter</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-xl-5">
+            <form method="post" action="{{ url('admin.pages.update', {id: page.id}) }}" class="admin-card mb-4" novalidate>
+                {{ csrf_field() }}
+                <h2 class="h6 mb-1">Réglages de la page</h2>
+                <p class="small text-secondary">{{ kind_label }} · enregistrés immédiatement.</p>
+                {{ forms.input('title', 'Titre', {required: true, maxlength: 120, value: page.title}) }}
+                {% if slug_locked %}
+                    <p class="small"><span class="form-label d-block mb-1">Adresse</span><code>{{ public_url }}</code> <span class="text-secondary">(fixe pour cette page)</span></p>
+                {% else %}
+                    {{ forms.input('slug', 'Adresse', {maxlength: 80, value: page.slug, help: 'Lettres, chiffres et tirets. Changer l\'adresse casse les liens déjà partagés.'}) }}
+                {% endif %}
+
+                <h3 class="h6 mt-4">Référencement et partage</h3>
+                {{ forms.input('seo_title', 'Titre pour Google', {maxlength: 70, value: page.seo_title, help: 'Facultatif, 70 caractères au plus. Par défaut : le titre de la page et le nom du site.'}) }}
+                <div class="mb-3">
+                    <label class="form-label" for="f-seo_description">Description pour Google</label>
+                    <textarea class="form-control{{ errors('seo_description') ? ' is-invalid' }}" id="f-seo_description" name="seo_description" rows="3" maxlength="300">{{ old('seo_description', page.seo_description) }}</textarea>
+                    {% for m in errors('seo_description') %}<div class="invalid-feedback">{{ m }}</div>{% endfor %}
+                </div>
+
+                <span class="form-label d-block" id="og-label">Image de partage (réseaux sociaux)</span>
+                <div class="admin-media-field mb-3" data-media-field>
+                    <input type="hidden" name="og_media_id" value="{{ og_image ? og_image.id : '' }}" data-media-input>
+                    <div class="admin-media-field-preview" data-media-preview>
+                        {% if og_image %}<img src="{{ og_image.url('thumb') }}" alt="{{ og_image.altText }}">{% else %}<span class="text-secondary small">Image par défaut du site</span>{% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="og-label">Choisir dans la bibliothèque</button>
+                        <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ og_image ? '' : ' hidden' }}>Retirer</button>
+                    </div>
+                    {% for m in errors('og_media_id') %}<div class="text-danger small">{{ m }}</div>{% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Enregistrer les réglages</button>
+            </form>
+
+            {% if is_live and page.kind != 'home' %}
+                <form method="post" action="{{ url('admin.pages.unpublish', {id: page.id}) }}" class="admin-card mb-4" data-confirm="Retirer cette page du site ? Elle restera modifiable ici.">
+                    {{ csrf_field() }}
+                    <h2 class="h6">Retirer du site</h2>
+                    <p class="small text-secondary">La page n'est plus accessible aux visiteurs ; son contenu est conservé.</p>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Retirer du site</button>
+                </form>
+            {% endif %}
+
+            {% if deletable %}
+                <form method="post" action="{{ url('admin.pages.destroy', {id: page.id}) }}" class="admin-card" data-confirm="Supprimer définitivement la page « {{ page.title }} » et toutes ses sections ?">
+                    {{ csrf_field() }}
+                    <h2 class="h6 text-danger">Supprimer la page</h2>
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer définitivement</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-sortable.js') }}"></script>
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+{% endblock %}

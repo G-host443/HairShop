@@ -1,0 +1,10 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}À propos de votre demande de rendez-vous.{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;color:#17140F;">Votre demande de rendez-vous</h1>
+    <p>Bonjour {{ booking.first_name }},</p>
+    <p>Je ne peux malheureusement pas accepter votre demande pour le {{ booking.starts_at|date_fr('datetime') }} ({{ booking.service_label }}).</p>
+    {% if payload.note ?? false %}<p style="padding:12px;background:#F6EFDF;border-radius:8px;">{{ payload.note }}</p>{% endif %}
+    <p>N'hésitez pas à choisir un autre créneau :</p>
+    {% include 'emails/_button.html.twig' with {href: base_url ~ '/reserver', label: 'Choisir un autre créneau'} %}
+{% endblock %}

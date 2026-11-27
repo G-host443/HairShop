@@ -1,0 +1,25 @@
+/vendor/
+.env
+.phpunit.result.cache
+.phpunit.cache/
+
+/storage/logs/*
+/storage/cache/*
+/storage/sessions/*
+!/storage/**/.gitkeep
+
+/public/uploads/*
+!/public/uploads/.htaccess
+/public/cache/*
+!/public/cache/.gitkeep
+/public/themes/*
+!/public/themes/.gitkeep
+
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+/storage/server.pid
+
+# Sauvegarde temporaire des images de démonstration pendant les tests
+/storage/testing/

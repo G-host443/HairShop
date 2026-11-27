@@ -1,0 +1,9 @@
+{% if manage_url %}
+    {% include 'emails/_button.html.twig' with {href: manage_url, label: 'Voir ou annuler mon rendez-vous'} %}
+    <p style="margin:0 0 12px;font-size:13px;color:#6D5B54;">Annulation possible en ligne jusqu'à {{ cancellation_hours }} h avant le rendez-vous. Ce lien est personnel : ne le partagez pas.</p>
+{% endif %}
+{% if whatsapp or phone %}
+    <p style="margin:12px 0 0;font-size:13px;color:#6D5B54;">Une question ?
+        {% if whatsapp %}<a href="https://wa.me/{{ whatsapp }}" style="color:#806217;">Écrivez-moi sur WhatsApp</a>{% endif %}
+        {% if phone %}{{ whatsapp ? 'ou appelez le' : 'Appelez le' }} {{ phone }}{% endif %}.</p>
+{% endif %}

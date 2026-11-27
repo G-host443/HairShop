@@ -1,0 +1,67 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.categories' %}
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-outline-secondary" href="{{ url('admin.categories') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Toutes les catégories</a>
+{% endblock %}
+
+{% block content %}
+    {% include 'admin/catalog/_tabs.twig' %}
+
+    <form method="post" action="{{ url('admin.categories.update', {id: category.id}) }}" class="admin-card admin-card-narrow mb-4" novalidate>
+        {{ csrf_field() }}
+        {{ forms.input('name', 'Nom', {required: true, maxlength: 80, value: category.name}) }}
+        {{ forms.input('slug', 'Adresse (slug)', {maxlength: 80, value: category.slug}) }}
+        {{ forms.input('header_note', 'Note d\'en-tête', {maxlength: 300, value: category.header_note}) }}
+        <div class="mb-3">
+            <label class="form-label" for="f-description">Description</label>
+            <textarea class="form-control" id="f-description" name="description" rows="3" maxlength="1000">{{ old('description', category.description) }}</textarea>
+        </div>
+
+        <span class="form-label d-block" id="cat-image-label">Image</span>
+        <div class="admin-media-field mb-3" data-media-field>
+            <input type="hidden" name="image_media_id" value="{{ image ? image.id : '' }}" data-media-input>
+            <div class="admin-media-field-preview" data-media-preview>
+                {% if image %}<img src="{{ image.url('thumb') }}" alt="{{ image.altText }}">{% else %}<span class="text-secondary small">Aucune image</span>{% endif %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="cat-image-label">Choisir dans la bibliothèque</button>
+                <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ image ? '' : ' hidden' }}>Retirer</button>
+            </div>
+        </div>
+
+        {% if groups is not empty %}
+            <fieldset class="mb-3">
+                <legend class="form-label">Options proposées pour toutes les prestations de la catégorie</legend>
+                {% for g in groups %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="g-{{ g.id }}" name="option_groups[]" value="{{ g.id }}"{{ g.id in selected_groups ? ' checked' }}>
+                        <label class="form-check-label" for="g-{{ g.id }}">{{ g.label }} <span class="text-secondary small">({{ g.options|length }} option{{ g.options|length > 1 ? 's' }})</span></label>
+                    </div>
+                {% endfor %}
+            </fieldset>
+        {% endif %}
+
+        <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="f-is_active" name="is_active" value="1"{{ category.is_active ? ' checked' }}>
+            <label class="form-check-label" for="f-is_active">Visible sur le site</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+
+    <form method="post" action="{{ url('admin.categories.destroy', {id: category.id}) }}" class="admin-card admin-card-narrow" data-confirm="Supprimer la catégorie « {{ category.name }} » ?">
+        {{ csrf_field() }}
+        <h2 class="h6">Supprimer la catégorie</h2>
+        <p class="small text-secondary">Possible uniquement si elle ne contient plus aucune prestation.</p>
+        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash" aria-hidden="true"></i> Supprimer</button>
+    </form>
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+{% endblock %}

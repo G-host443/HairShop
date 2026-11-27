@@ -1,0 +1,42 @@
+{#
+  Avis sur un rendez-vous terminé.
+  Paramètres : review_action (URL du formulaire), can_review, review (avis déjà laissé ou null), default_author.
+#}
+{% if review %}
+    <div class="review-thanks" id="avis">
+        <p class="form-success" role="status">
+            {% if review.status == 'approved' %}Merci pour votre avis, il est publié sur le site.
+            {% elseif review.status == 'pending' %}Merci pour votre avis ! Il sera publié après relecture.
+            {% else %}Merci pour votre retour.{% endif %}
+        </p>
+    </div>
+{% elseif can_review %}
+    <form method="post" action="{{ review_action }}" class="review-form" id="avis" novalidate>
+        {{ csrf_field() }}
+        <h3 class="review-form-title">Votre avis sur cette prestation</h3>
+        {% set rating_errors = errors('rating') %}
+        <fieldset class="rating-input{{ rating_errors ? ' has-error' }}"{% if rating_errors %} aria-describedby="r-rating-error"{% endif %}>
+            <legend>Votre note</legend>
+            <div class="rating-input-stars">
+                {% for n in 5..1 %}
+                    <input type="radio" id="r-rating-{{ n }}" name="rating" value="{{ n }}"{{ old('rating') == n ? ' checked' }}>
+                    <label for="r-rating-{{ n }}" title="{{ n }} sur 5"><span aria-hidden="true">★</span><span class="visually-hidden">{{ n }} étoile{{ n > 1 ? 's' }} sur 5</span></label>
+                {% endfor %}
+            </div>
+            {% for m in rating_errors %}<p class="form-error" id="r-rating-error">{{ m }}</p>{% endfor %}
+        </fieldset>
+        <div class="form-field">
+            <label for="r-comment">Votre avis</label>
+            <textarea id="r-comment" name="comment" rows="4" maxlength="1500" required{% if errors('comment') %} aria-invalid="true" aria-describedby="r-comment-error"{% endif %}>{{ old('comment') }}</textarea>
+            {% for m in errors('comment') %}<p class="form-error" id="r-comment-error">{{ m }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+            <label for="r-author">Nom affiché</label>
+            <input type="text" id="r-author" name="author_name" maxlength="60" value="{{ old('author_name', default_author) }}" aria-describedby="r-author-help"{% if errors('author_name') %} aria-invalid="true"{% endif %}>
+            <p class="form-help" id="r-author-help">Par exemple votre prénom et l'initiale de votre nom. Votre avis est relu avant publication.</p>
+            {% for m in errors('author_name') %}<p class="form-error">{{ m }}</p>{% endfor %}
+        </div>
+        {% for m in errors('review') %}<p class="form-error">{{ m }}</p>{% endfor %}
+        <button type="submit" class="btn btn-primary">Envoyer mon avis</button>
+    </form>
+{% endif %}

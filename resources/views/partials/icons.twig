@@ -1,0 +1,19 @@
+{# Icônes SVG au trait, décoratives (aria-hidden) : le texte voisin porte le sens. #}
+{% macro icon(name, size = 20) %}
+    {% set paths = {
+        pin: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+        clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+        whatsapp: '<path d="M4 20l1.3-3.8A8 8 0 1 1 8.6 19L4 20z"/><path d="M9 9.5c.3 2.2 2.3 4.4 5 5l1.2-1.2-1.8-1-.8.7c-.9-.4-1.8-1.3-2.2-2.2l.7-.8-1-1.8L9 9.5z"/>',
+        'chat-dots': '<path d="M4 5h16v11H9l-5 4V5z"/><path d="M9 10.5h.01M12 10.5h.01M15 10.5h.01"/>',
+        telephone: '<path d="M6.5 3.5l3 3-2 2.5a12 12 0 0 0 7.5 7.5l2.5-2 3 3-2 3C11 20 4 13 3.5 5.5l3-2z"/>',
+        envelope: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
+        instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17 7h.01"/>',
+        facebook: '<path d="M14 21v-8h2.5l.5-3H14V8.5c0-.9.4-1.5 1.6-1.5H17V4.3A20 20 0 0 0 14.8 4C12.6 4 11 5.4 11 7.9V10H8.5v3H11v8"/>',
+        tiktok: '<path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.6"/>',
+        star: '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8L12 3.5z"/>',
+        arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+        check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>'
+    } %}
+    <svg class="icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{ (paths[name] ?? paths.info)|raw }}</svg>
+{% endmacro %}

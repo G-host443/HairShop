@@ -1,0 +1,55 @@
+{% import 'partials/icons.twig' as ui %}
+{#
+  Tarifs en tableau : une table par catégorie (prestation, tailles, prix, lien de réservation).
+  Le détail par taille et longueur se trouve sur la fiche de chaque prestation.
+#}
+<section class="section pricing pricing-table-section" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="pricing-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header">
+            <h2 class="section-title" id="pricing-title-{{ section.id }}">{{ title }}</h2>
+            {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        </header>
+
+        {% if categories|length > 1 %}
+            <nav aria-label="Catégories de tarifs">
+                <ul class="chip-row chip-row-start">
+                    {% for category in categories %}<li><a class="chip" href="#categorie-{{ category.slug }}">{{ category.name }}</a></li>{% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+
+        {% for category in categories %}
+            <div class="price-table-block" id="categorie-{{ category.slug }}">
+                <div class="table-scroll">
+                    <table class="price-table price-table-full">
+                        <caption>
+                            {{ category.name }}
+                            {% if category.note %}<span class="price-table-note">{{ category.note }}</span>{% endif %}
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Prestation</th>
+                                <th scope="col">Tailles</th>
+                                <th scope="col" class="price-col">Prix</th>
+                                <th scope="col"><span class="visually-hidden">Détail</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in category.services %}
+                                <tr>
+                                    <th scope="row">
+                                        {{ service.name }}{% if service.promotion %} <span class="promo-badge" title="{{ service.promotion.name }}">{{ service.promotion.badge }}</span>{% endif %}
+                                        {% if service.alert %}<span class="price-table-alert">{{ ui.icon('info', 15) }} {{ service.alert }}</span>{% endif %}
+                                    </th>
+                                    <td>{{ service.sizes ?? '—' }}</td>
+                                    <td class="price-col">{% if service.original_price_label %}<s class="price-original" aria-label="au lieu de {{ service.original_price_label }}">{{ service.original_price_label }}</s> {% endif %}{{ service.price_label }}</td>
+                                    <td class="link-col"><a href="/prestations/{{ service.slug }}">Détail et réservation<span class="visually-hidden"> : {{ service.name }}</span></a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

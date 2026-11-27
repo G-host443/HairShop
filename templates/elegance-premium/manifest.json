@@ -1,0 +1,44 @@
+{
+    "slug": "elegance-premium",
+    "name": "Élégance Premium",
+    "version": "1.0.0",
+    "description": "Luxe minimaliste : ivoire, noir profond et touches champagne, grandes images en pleine largeur, titres Didot et beaucoup d'espace.",
+    "tokens": {
+        "color.bg": "#FBFAF7",
+        "color.surface": "#FFFFFF",
+        "color.surface-alt": "#F2EEE6",
+        "color.border": "#DED7CA",
+        "color.accent": "#B89B5E",
+        "color.accent-light": "#E6D7B5",
+        "color.accent-dark": "#6E5A2E",
+        "color.text": "#3B3A36",
+        "color.text-muted": "#66625A",
+        "color.heading": "#111111",
+        "color.on-accent": "#111111",
+        "font.heading": "Bodoni Moda",
+        "font.body": "Montserrat",
+        "font.script": "Allura",
+        "radius.card": "2px",
+        "radius.image": "0px",
+        "radius.button": "2px",
+        "space.section": "136px",
+        "size.container": "1200px",
+        "motion.level": "subtle"
+    },
+    "layout": {
+        "header": ["sticky", "static"]
+    },
+    "sections": {
+        "hero": ["fullscreen", "centered"],
+        "pricing_grid": ["chips"],
+        "gallery": ["masonry", "grid"],
+        "practical_info": ["three-columns"],
+        "testimonials": ["quotes", "cards"],
+        "contact": ["buttons", "form"],
+        "cta": ["banner"],
+        "rich_text": ["prose"],
+        "promotions": ["cards"],
+        "blog_latest": ["cards"]
+    },
+    "home_preset": ["hero", "pricing_grid", "gallery", "testimonials", "practical_info", "contact"]
+}

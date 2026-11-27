@@ -1,0 +1,11 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+{{ is_confirmed ? 'Votre rendez-vous est confirmé. Merci pour votre réservation, à très bientôt !' : 'Merci pour votre demande. Je la vérifie et je reviens vers vous rapidement pour la confirmer.' }}
+
+{% include 'emails/_booking_details.txt.twig' %}
+{% if rules is not empty %}{{ "\n" }}À savoir avant de venir :
+{% for r in rules %}- {{ r }}
+{% endfor %}{% endif %}
+{% include 'emails/_manage.txt.twig' %}
+{% endautoescape %}

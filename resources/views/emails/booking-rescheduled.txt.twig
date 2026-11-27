@@ -1,0 +1,8 @@
+{% autoescape false %}
+Bonjour {{ booking.first_name }},
+
+Votre rendez-vous a été déplacé{% if payload.previous_start ?? false %} (il était prévu le {{ payload.previous_start|date_fr('datetime') }}){% endif %}. Nouvel horaire :
+
+{% include 'emails/_booking_details.txt.twig' %}
+{% include 'emails/_manage.txt.twig' %}
+{% endautoescape %}

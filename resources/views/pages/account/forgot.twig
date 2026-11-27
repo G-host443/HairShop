@@ -1,0 +1,15 @@
+{% import 'pages/account/_forms.twig' as f %}
+<section class="section account">
+    <div class="container">
+        <div class="account-auth card">
+            <h2 class="booking-title">Mot de passe oublié</h2>
+            <p class="booking-lead">Indiquez l'adresse e-mail de votre espace : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+            <form method="post" action="/compte/mot-de-passe-oublie" class="booking-form" novalidate>
+                {{ csrf_field() }}
+                {{ f.field('email', 'Adresse e-mail', {type: 'email', autocomplete: 'username', required: true, autofocus: true}) }}
+                <button type="submit" class="btn btn-primary">Envoyer le lien</button>
+            </form>
+            <p class="account-links"><a href="/compte/connexion">Retour à la connexion</a></p>
+        </div>
+    </div>
+</section>

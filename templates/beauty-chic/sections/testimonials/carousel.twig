@@ -1,0 +1,33 @@
+{#
+  Avis en carrousel : une liste qui défile horizontalement (glisser, molette ou flèches).
+  Sans JavaScript, la liste reste simplement défilable ; les boutons ne s'affichent qu'avec JavaScript.
+#}
+<section class="section testimonials testimonials-carousel" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="reviews-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="reviews-title-{{ section.id }}">{{ title }}</h2>
+            <p class="section-intro"><span class="carousel-stars" aria-hidden="true">★★★★★</span> {{ average|number_format(1, ',') }} / 5 · {{ count }} avis</p>
+        </header>
+        <div class="carousel" data-carousel>
+            <ul class="carousel-track" id="carousel-{{ section.id }}" tabindex="0" aria-label="Avis des clientes, faire défiler horizontalement">
+                {% for review in reviews %}
+                    <li class="carousel-item card">
+                        <p class="stars-text" aria-label="Note : {{ review.rating }} sur 5">{{ '★'|repeat(review.rating) }}{{ '☆'|repeat(5 - review.rating) }}</p>
+                        <blockquote><p>{{ review.comment|nl2br }}</p></blockquote>
+                        <div class="testimonial-footer">
+                            {% if review.photo %}<img class="testimonial-photo" src="{{ review.photo.url('thumb') }}" alt="" width="48" height="48" loading="lazy">{% endif %}
+                            <p class="testimonial-author">{{ review.author }}<span class="testimonial-meta">{{ review.date|date_fr('month') }}{% if review.service %} · {{ review.service }}{% endif %}</span></p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="carousel-controls" data-carousel-controls hidden>
+                <button type="button" class="carousel-btn" data-carousel-prev aria-controls="carousel-{{ section.id }}" aria-label="Avis précédents">‹</button>
+                <button type="button" class="carousel-btn" data-carousel-next aria-controls="carousel-{{ section.id }}" aria-label="Avis suivants">›</button>
+            </div>
+        </div>
+        {% if show_link %}
+            <p class="section-more reveal"><a class="btn btn-ghost" href="/avis">Lire tous les avis</a></p>
+        {% endif %}
+    </div>
+</section>

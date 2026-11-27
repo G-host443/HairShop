@@ -1,0 +1,60 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.pages' %}
+{% block title %}Pages{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="admin-card">
+                <h2 class="h6 mb-3">Pages du site</h2>
+                <ul class="admin-list list-unstyled mb-0">
+                    {% for p in pages %}
+                        <li class="admin-list-item">
+                            <span class="admin-list-main">
+                                <a href="{{ url('admin.pages.edit', {id: p.id}) }}" class="fw-medium">{{ p.title }}</a>
+                                <span class="small text-secondary d-block">
+                                    {{ kinds[p.kind] ?? p.kind }} · {{ p.kind == 'home' ? '/' : '/' ~ p.slug }} · {{ p.sections_count }} section{{ p.sections_count > 1 ? 's' }}
+                                </span>
+                            </span>
+                            <span class="admin-list-badges">
+                                {% if p.status == 'published' %}
+                                    <span class="badge text-bg-success">En ligne</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Brouillon</span>
+                                {% endif %}
+                                {% if p.has_unpublished_changes and p.status == 'published' %}
+                                    <span class="badge text-bg-warning">Modifications non publiées</span>
+                                {% endif %}
+                            </span>
+                            <span class="admin-list-actions">
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.pages.preview', {id: p.id}) }}"><i class="bi bi-eye" aria-hidden="true"></i><span class="visually-hidden"> Aperçu de {{ p.title }}</span></a>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.pages.edit', {id: p.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden"> Modifier {{ p.title }}</span></a>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <form method="post" action="{{ url('admin.pages.store') }}" class="admin-card" novalidate>
+                {{ csrf_field() }}
+                <h2 class="h6 mb-3">Nouvelle page</h2>
+                {{ forms.input('title', 'Titre', {required: true, maxlength: 120}) }}
+                {{ forms.input('slug', 'Adresse', {maxlength: 80, help: 'Facultatif : déduite du titre (ex. « Nos conseils » → /nos-conseils).'}) }}
+                <div class="mb-3">
+                    <label class="form-label" for="f-kind">Type</label>
+                    <select class="form-select" id="f-kind" name="kind">
+                        {% for value, label in creatable_kinds %}
+                            <option value="{{ value }}"{{ old('kind', 'standard') == value ? ' selected' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Les pages légales et de contenu publiées apparaissent dans le pied de page.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Créer la page</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

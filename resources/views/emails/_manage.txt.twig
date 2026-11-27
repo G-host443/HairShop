@@ -1,0 +1,9 @@
+{% autoescape false %}
+{% if manage_url %}{{ "\n" }}Voir ou annuler votre rendez-vous (jusqu'à {{ cancellation_hours }} h avant) :
+{{ manage_url }}
+{% endif %}{{ "\n" }}
+{% if whatsapp %}WhatsApp : https://wa.me/{{ whatsapp }}
+{% endif %}{% if phone %}Téléphone : {{ phone }}
+{% endif %}
+— {{ site_name }}
+{% endautoescape %}

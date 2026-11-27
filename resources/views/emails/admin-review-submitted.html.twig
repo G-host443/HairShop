@@ -1,0 +1,9 @@
+{% extends 'emails/_layout.html.twig' %}
+{% block preheader %}{{ review.rating }}/5 — {{ review.comment|slice(0, 80) }}{% endblock %}
+{% block content %}
+    <h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:22px;color:#17140F;">Nouvel avis à modérer</h1>
+    <p><strong>{{ review.author_name }}</strong> — {{ '★'|repeat(review.rating) }}{{ '☆'|repeat(5 - review.rating) }} ({{ review.rating }}/5){% if review.service_label %}<br><span style="color:#6D5B54;">{{ review.service_label }}{% if review.reference %} · {{ review.reference }}{% endif %}</span>{% endif %}</p>
+    <p style="padding:12px;background:#F6EFDF;border-radius:8px;">{{ review.comment|nl2br }}</p>
+    {% include 'emails/_button.html.twig' with {href: admin_url, label: 'Approuver ou refuser'} %}
+    <p style="font-size:13px;color:#6D5B54;">L'avis n'est pas visible sur le site tant qu'il n'est pas approuvé.</p>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% import 'pages/account/_forms.twig' as f %}
+<section class="section account">
+    <div class="container">
+        <div class="account-auth card">
+            <h2 class="booking-title">Nouveau mot de passe</h2>
+            <form method="post" action="/compte/reinitialisation/{{ token }}" class="booking-form" novalidate>
+                {{ csrf_field() }}
+                {{ f.field('password', 'Nouveau mot de passe', {type: 'password', autocomplete: 'new-password', required: true, autofocus: true, help: 'Au moins ' ~ min_length ~ ' caractères, avec au moins trois types parmi : minuscules, majuscules, chiffres, symboles.'}) }}
+                {{ f.field('password_confirmation', 'Confirmer le mot de passe', {type: 'password', autocomplete: 'new-password', required: true}) }}
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</section>

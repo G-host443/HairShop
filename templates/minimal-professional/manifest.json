@@ -1,0 +1,44 @@
+{
+    "slug": "minimal-professional",
+    "name": "Minimal Professional",
+    "version": "1.0.0",
+    "description": "Sobre et efficace : blanc, gris et bleu marine, une seule police très lisible, peu d'images. Les tarifs s'affichent en tableau, l'essentiel en un coup d'œil.",
+    "tokens": {
+        "color.bg": "#FFFFFF",
+        "color.surface": "#F7F8FA",
+        "color.surface-alt": "#F1F3F6",
+        "color.border": "#DDE1E7",
+        "color.accent": "#1F4E79",
+        "color.accent-light": "#D6E2EE",
+        "color.accent-dark": "#173B5C",
+        "color.text": "#2B2F36",
+        "color.text-muted": "#5B6370",
+        "color.heading": "#11151C",
+        "color.on-accent": "#FFFFFF",
+        "font.heading": "Inter",
+        "font.body": "Inter",
+        "font.script": "Inter",
+        "radius.card": "8px",
+        "radius.image": "6px",
+        "radius.button": "6px",
+        "space.section": "88px",
+        "size.container": "1080px",
+        "motion.level": "none"
+    },
+    "layout": {
+        "header": ["sticky", "static"]
+    },
+    "sections": {
+        "hero": ["minimal", "centered"],
+        "pricing_grid": ["table", "chips"],
+        "gallery": ["grid"],
+        "practical_info": ["three-columns"],
+        "testimonials": ["cards"],
+        "contact": ["form", "buttons"],
+        "cta": ["banner"],
+        "rich_text": ["prose"],
+        "promotions": ["cards"],
+        "blog_latest": ["cards"]
+    },
+    "home_preset": ["hero", "pricing_grid", "practical_info", "testimonials", "contact"]
+}

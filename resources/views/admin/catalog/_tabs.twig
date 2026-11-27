@@ -1,0 +1,12 @@
+<nav class="admin-tabs" aria-label="Rubriques du catalogue">
+    {% for key, item in {
+        services: {route: 'admin.services', label: 'Prestations', icon: 'scissors'},
+        categories: {route: 'admin.categories', label: 'Catégories', icon: 'tags'},
+        dimensions: {route: 'admin.catalog.dimensions', label: 'Tailles et longueurs', icon: 'rulers'},
+        options: {route: 'admin.catalog.options', label: 'Options', icon: 'stars'},
+    } %}
+        <a class="admin-tab{{ tab == key ? ' active' }}" href="{{ url(item.route) }}"{% if tab == key %} aria-current="page"{% endif %}>
+            <i class="bi bi-{{ item.icon }}" aria-hidden="true"></i> {{ item.label }}
+        </a>
+    {% endfor %}
+</nav>

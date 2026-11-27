@@ -1,0 +1,26 @@
+{% import 'partials/icons.twig' as ui %}
+<section class="section testimonials" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="reviews-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="reviews-title-{{ section.id }}">{{ title }}</h2>
+            <p class="section-intro">{{ average|number_format(1, ',') }} / 5 · {{ count }} avis</p>
+        </header>
+        <ul class="testimonial-grid">
+            {% for review in reviews %}
+                <li class="card testimonial reveal">
+                    <p class="stars" aria-label="Note : {{ review.rating }} sur 5">
+                        {% for i in 1..5 %}<span class="{{ i <= review.rating ? 'is-on' }}">{{ ui.icon('star', 16) }}</span>{% endfor %}
+                    </p>
+                    <blockquote><p>{{ review.comment|nl2br }}</p></blockquote>
+                    <div class="testimonial-footer">
+                        {% if review.photo %}<img class="testimonial-photo" src="{{ review.photo.url('thumb') }}" alt="" width="48" height="48" loading="lazy">{% endif %}
+                        <p class="testimonial-author">{{ review.author }}<span class="testimonial-meta">{{ review.date|date_fr('month') }}{% if review.service %} · {{ review.service }}{% endif %}</span></p>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% if show_link %}
+            <p class="section-more reveal"><a class="btn btn-ghost" href="/avis">Lire tous les avis</a></p>
+        {% endif %}
+    </div>
+</section>

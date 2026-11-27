@@ -1,0 +1,79 @@
+{% extends 'admin/layouts/base.twig' %}
+{% import '@components/forms.twig' as forms %}
+
+{% set current_route = 'admin.media' %}
+{% block title %}{{ media.originalName }}{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url('admin.media', media.folderId ? {dossier: media.folderId} : {}) }}">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Retour à la bibliothèque
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="admin-card admin-media-preview">
+                {% if media.isImage %}
+                    <img src="{{ media.url('large') }}" alt="{{ media.altText }}">
+                {% else %}
+                    <video src="{{ media.url }}" controls preload="metadata"></video>
+                {% endif %}
+            </div>
+
+            <div class="admin-card mt-4">
+                <h2 class="h6">Fichiers</h2>
+                <dl class="admin-meta">
+                    <dt>Type</dt><dd>{{ media.mimeType }}</dd>
+                    {% if media.width %}<dt>Dimensions</dt><dd>{{ media.width }} × {{ media.height }} px</dd>{% endif %}
+                    <dt>Poids</dt><dd>{{ media.humanSize }}</dd>
+                    <dt>Importé le</dt><dd>{{ media.createdAt|date('d/m/Y à H:i') }}</dd>
+                    <dt>Original</dt><dd><a href="{{ media.url }}" target="_blank" rel="noopener">{{ media.url }}</a></dd>
+                    {% for name, path in media.variants %}
+                        <dt>{{ variant_labels[name] ?? name }} (WebP)</dt>
+                        <dd><a href="{{ media.url(name) }}" target="_blank" rel="noopener">{{ media.url(name) }}</a></dd>
+                    {% endfor %}
+                </dl>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <form method="post" action="{{ url('admin.media.update', {id: media.id}) }}" class="admin-card" novalidate>
+                {{ csrf_field() }}
+                <h2 class="h6 mb-3">Informations</h2>
+                {{ forms.input('original_name', 'Nom', {required: true, maxlength: 150, value: media.originalName}) }}
+                {% if media.isImage %}
+                    {{ forms.input('alt_text', 'Texte alternatif', {
+                        maxlength: 250, value: media.altText,
+                        help: 'Décrit l\'image pour les personnes malvoyantes et pour Google. Ex. : « Knotless taille M, longueur mi-dos ».'
+                    }) }}
+                {% endif %}
+                <div class="mb-3">
+                    <label class="form-label" for="f-folder_id">Dossier</label>
+                    <select class="form-select" id="f-folder_id" name="folder_id">
+                        <option value="">(Sans dossier)</option>
+                        {% for folder in folders %}
+                            <option value="{{ folder.id }}"{{ folder.id == media.folderId ? ' selected' }}>{{ '— '|repeat(folder.depth) }}{{ folder.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </form>
+
+            <div class="admin-card mt-4">
+                <h2 class="h6">Utilisation</h2>
+                {% if usages is empty %}
+                    <p class="text-secondary mb-3">Ce média n'est utilisé nulle part sur le site.</p>
+                    <form method="post" action="{{ url('admin.media.destroy', {id: media.id}) }}"
+                          data-confirm="Supprimer définitivement « {{ media.originalName }} » ? Cette action est irréversible.">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash" aria-hidden="true"></i> Supprimer</button>
+                    </form>
+                {% else %}
+                    <ul class="mb-2">{% for usage in usages %}<li>{{ usage }}</li>{% endfor %}</ul>
+                    <p class="small text-secondary mb-0">Remplacez-le à ces endroits pour pouvoir le supprimer.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

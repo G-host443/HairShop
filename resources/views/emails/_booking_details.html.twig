@@ -1,0 +1,20 @@
+{% set price = booking.final_total is not null ? booking.final_total|euros : (booking.estimated_total is not null ? booking.estimated_total|euros : 'Sur devis') ~ (booking.discount_amount > 0 and booking.final_total is null ? ' (remise de ' ~ booking.discount_amount|euros ~ ' incluse)' : '') %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;border-top:1px solid #D9CFBF;font-size:14px;">
+    {% for label, value in {
+        'Référence': booking.reference,
+        'Prestation': booking.service_label ~ (options|map(o => ' + ' ~ o.label|lower)|join('')),
+        'Date': booking.starts_at|date_fr('datetime')|capitalize,
+        'Fin estimée': booking.ends_at|date_fr('time'),
+        'Prix': price,
+    } %}
+        <tr>
+            <td style="padding:8px 0;border-bottom:1px solid #D9CFBF;color:#6D5B54;width:38%;">{{ label }}</td>
+            <td style="padding:8px 0;border-bottom:1px solid #D9CFBF;color:#17140F;font-weight:bold;">{{ value }}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% if show_address %}
+    <p style="margin:0 0 12px;"><strong style="color:#17140F;">Adresse :</strong><br>{{ address|nl2br }}</p>
+{% elseif location_type == 'home' %}
+    <p style="margin:0 0 12px;font-size:14px;">L'adresse exacte vous sera envoyée avec la confirmation du rendez-vous.</p>
+{% endif %}

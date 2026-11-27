@@ -1,0 +1,31 @@
+{% import 'partials/icons.twig' as ui %}
+{% set ctas = [primary_cta, secondary_cta]|filter(c => c and (not (c.target starts with '#') or c.target[1:] in anchors)) %}
+<section class="section hero hero-split" aria-labelledby="hero-title-{{ section.id }}">
+    <div class="container hero-inner">
+        <div class="hero-text reveal">
+            {% if eyebrow %}<p class="hero-eyebrow">{{ eyebrow }}</p>{% endif %}
+            <h1 class="hero-title" id="hero-title-{{ section.id }}">{{ title }}</h1>
+            {% if text %}<p class="hero-lead">{{ text }}</p>{% endif %}
+            {% if location %}
+                <p class="hero-location">{{ ui.icon('pin', 18) }} {{ location }}</p>
+            {% endif %}
+            {% if ctas is not empty %}
+                <div class="button-row">
+                    {% for cta in ctas %}
+                        <a class="btn {{ loop.first ? 'btn-primary' : 'btn-ghost' }}" href="{{ cta.target }}">{{ cta.label }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="hero-visual reveal">
+            <div class="hero-frame{{ image and image_is_logo ? ' is-logo' }}">
+                {% if image %}
+                    <img src="{{ image.url('medium') }}" alt="{{ image_is_logo ? '' : image.altText }}" width="{{ image.width }}" height="{{ image.height }}" fetchpriority="high">
+                {% else %}
+                    <span class="hero-monogram" aria-hidden="true">{{ setting('general.site_name', app.name)|first }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>

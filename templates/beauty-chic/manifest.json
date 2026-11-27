@@ -1,0 +1,44 @@
+{
+    "slug": "beauty-chic",
+    "name": "Beauty Chic",
+    "version": "1.0.0",
+    "description": "Doux et lumineux : rose poudré, formes très arrondies, titres élégants et animations délicates. Les avis défilent en carrousel.",
+    "tokens": {
+        "color.bg": "#FFF7F8",
+        "color.surface": "#FFFFFF",
+        "color.surface-alt": "#FBE9EE",
+        "color.border": "#F1D3DC",
+        "color.accent": "#E8A3B5",
+        "color.accent-light": "#F7D3DD",
+        "color.accent-dark": "#9C3D5A",
+        "color.text": "#5B4650",
+        "color.text-muted": "#7A626C",
+        "color.heading": "#3A2530",
+        "color.on-accent": "#3A2530",
+        "font.heading": "Playfair Display",
+        "font.body": "Poppins",
+        "font.script": "Great Vibes",
+        "radius.card": "28px",
+        "radius.image": "24px",
+        "radius.button": "40px",
+        "space.section": "104px",
+        "size.container": "1140px",
+        "motion.level": "lively"
+    },
+    "layout": {
+        "header": ["sticky", "static"]
+    },
+    "sections": {
+        "hero": ["centered", "split-logo"],
+        "pricing_grid": ["chips"],
+        "gallery": ["grid", "masonry"],
+        "practical_info": ["three-columns"],
+        "testimonials": ["carousel", "cards"],
+        "contact": ["buttons", "form"],
+        "cta": ["banner"],
+        "rich_text": ["prose"],
+        "promotions": ["cards"],
+        "blog_latest": ["cards"]
+    },
+    "home_preset": ["hero", "promotions", "pricing_grid", "gallery", "testimonials", "practical_info", "contact"]
+}

@@ -1,0 +1,48 @@
+{% import 'partials/icons.twig' as ui %}
+<section class="section practical" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="practical-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <h2 class="section-title" id="practical-title-{{ section.id }}">{{ title }}</h2>
+        </header>
+        <div class="practical-grid">
+            {% if location %}
+                <article class="card practical-card reveal">
+                    <h3 class="practical-card-title">{{ ui.icon('pin') }} Où</h3>
+                    {% if location.public %}<p>{{ location.public }}</p>{% endif %}
+                    {% if location.address %}<p class="practical-address">{{ location.address|nl2br }}</p>{% endif %}
+                    {% if not location.is_salon %}
+                        <p class="text-muted">L'adresse exacte vous est envoyée avec la confirmation du rendez-vous.</p>
+                    {% endif %}
+                </article>
+            {% endif %}
+
+            {% if hours is not empty %}
+                <article class="card practical-card reveal">
+                    <h3 class="practical-card-title">{{ ui.icon('clock') }} Horaires</h3>
+                    <dl class="hours">
+                        {% for row in hours %}
+                            <div class="hours-row{{ row.closed ? ' is-closed' }}">
+                                <dt>{{ row.days }}</dt>
+                                <dd>{{ row.hours }}</dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                    {% for closure in closures %}
+                        <p class="notice">{{ closure.label }}{% if closure.note %} — {{ closure.note }}{% endif %}</p>
+                    {% endfor %}
+                </article>
+            {% endif %}
+
+            {% if rules is not empty %}
+                <article class="card practical-card reveal">
+                    <h3 class="practical-card-title">{{ ui.icon('info') }} À savoir avant de venir</h3>
+                    <ul class="check-list">
+                        {% for rule in rules %}
+                            <li>{{ ui.icon('check', 16) }}<span>{{ rule }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            {% endif %}
+        </div>
+    </div>
+</section>

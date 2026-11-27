@@ -1,0 +1,7 @@
+<ul class="nav nav-tabs mb-4">
+    {% for key, item in {templates: {route: 'admin.appearance', label: 'Templates'}, customize: {route: 'admin.appearance.customize', label: 'Personnalisation'}} %}
+        <li class="nav-item">
+            <a class="nav-link{{ tab == key ? ' active' }}" href="{{ url(item.route) }}"{% if tab == key %} aria-current="page"{% endif %}>{{ item.label }}</a>
+        </li>
+    {% endfor %}
+</ul>

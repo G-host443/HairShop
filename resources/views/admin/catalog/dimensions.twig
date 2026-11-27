@@ -1,0 +1,96 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.catalog.dimensions' %}
+{% block title %}Tailles et longueurs{% endblock %}
+
+{% block content %}
+    {% include 'admin/catalog/_tabs.twig' %}
+    <p class="text-secondary">Ces listes servent de lignes et de colonnes aux grilles de prix. L'ordre choisi ici est celui du site (de la plus fine à la plus épaisse, de la plus courte à la plus longue).</p>
+
+    <div class="row g-4">
+        {# ---------- Tailles ---------- #}
+        <div class="col-lg-6">
+            <div class="admin-card h-100">
+                <h2 class="h6 mb-3">Tailles</h2>
+                <ul class="admin-list list-unstyled" data-sortable="{{ url('admin.catalog.reorder', {kind: 'tailles'}) }}">
+                    {% for size in sizes %}
+                        <li class="admin-list-item" data-id="{{ size.id }}">
+                            <span class="admin-drag" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                            <form method="post" action="{{ url('admin.catalog.sizes.update', {id: size.id}) }}" class="d-flex flex-wrap gap-2 flex-grow-1 align-items-center">
+                                {{ csrf_field() }}
+                                <label class="visually-hidden" for="size-code-{{ size.id }}">Code</label>
+                                <input class="form-control form-control-sm admin-input-code" id="size-code-{{ size.id }}" name="code" value="{{ size.code }}" maxlength="6" required>
+                                <label class="visually-hidden" for="size-label-{{ size.id }}">Description</label>
+                                <input class="form-control form-control-sm flex-grow-1 w-auto" id="size-label-{{ size.id }}" name="label" value="{{ size.label }}" maxlength="40" required>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Enregistrer</button>
+                            </form>
+                            {% if size.used == 0 %}
+                                <form method="post" action="{{ url('admin.catalog.sizes.destroy', {id: size.id}) }}" data-confirm="Supprimer la taille {{ size.code }} ?">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" aria-label="Supprimer la taille {{ size.code }}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            {% else %}
+                                <span class="small text-secondary" title="Utilisée dans {{ size.used }} grille(s)">{{ size.used }} ×</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="{{ url('admin.catalog.sizes.store') }}" class="d-flex flex-wrap gap-2 align-items-end border-top pt-3">
+                    {{ csrf_field() }}
+                    <div>
+                        <label class="form-label small" for="new-size-code">Code</label>
+                        <input class="form-control form-control-sm admin-input-code{{ errors('code') ? ' is-invalid' }}" id="new-size-code" name="code" maxlength="6" placeholder="XXL" required>
+                    </div>
+                    <div class="flex-grow-1">
+                        <label class="form-label small" for="new-size-label">Description</label>
+                        <input class="form-control form-control-sm" id="new-size-label" name="label" maxlength="40" placeholder="Extra épaisses" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Ajouter</button>
+                    {% if errors('code') or errors('label') %}<div class="text-danger small w-100">{{ (errors('code')|merge(errors('label')))|join(' ') }}</div>{% endif %}
+                </form>
+            </div>
+        </div>
+
+        {# ---------- Longueurs ---------- #}
+        <div class="col-lg-6">
+            <div class="admin-card h-100">
+                <h2 class="h6 mb-3">Longueurs</h2>
+                <ul class="admin-list list-unstyled" data-sortable="{{ url('admin.catalog.reorder', {kind: 'longueurs'}) }}">
+                    {% for length in lengths %}
+                        <li class="admin-list-item" data-id="{{ length.id }}">
+                            <span class="admin-drag" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                            <form method="post" action="{{ url('admin.catalog.lengths.update', {id: length.id}) }}" class="d-flex gap-2 flex-grow-1 align-items-center">
+                                {{ csrf_field() }}
+                                <label class="visually-hidden" for="length-{{ length.id }}">Longueur</label>
+                                <input class="form-control form-control-sm" id="length-{{ length.id }}" name="length_label" value="{{ length.label }}" maxlength="60" required>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Enregistrer</button>
+                            </form>
+                            {% if length.used == 0 %}
+                                <form method="post" action="{{ url('admin.catalog.lengths.destroy', {id: length.id}) }}" data-confirm="Supprimer la longueur « {{ length.label }} » ?">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" aria-label="Supprimer la longueur {{ length.label }}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            {% else %}
+                                <span class="small text-secondary" title="{{ length.used }} prix utilisent cette longueur">{{ length.used }} ×</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="{{ url('admin.catalog.lengths.store') }}" class="d-flex gap-2 align-items-end border-top pt-3">
+                    {{ csrf_field() }}
+                    <div class="flex-grow-1">
+                        <label class="form-label small" for="new-length">Nouvelle longueur</label>
+                        <input class="form-control form-control-sm{{ errors('length_label') ? ' is-invalid' }}" id="new-length" name="length_label" maxlength="60" placeholder="Genoux" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Ajouter</button>
+                    {% if errors('length_label') %}<div class="text-danger small w-100">{{ errors('length_label')|join(' ') }}</div>{% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-sortable.js') }}"></script>
+{% endblock %}

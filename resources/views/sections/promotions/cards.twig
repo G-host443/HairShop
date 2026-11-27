@@ -1,0 +1,22 @@
+<section class="section promotions" {% if section.anchor %}id="{{ section.anchor }}"{% endif %} aria-labelledby="promo-title-{{ section.id }}">
+    <div class="container">
+        <header class="section-header reveal">
+            <p class="eyebrow">Offres du moment</p>
+            <h2 class="section-title" id="promo-title-{{ section.id }}">{{ title }}</h2>
+            {% if intro %}<p class="section-intro">{{ intro }}</p>{% endif %}
+        </header>
+        <ul class="promo-list">
+            {% for offer in offers %}
+                <li class="promo-card card reveal">
+                    <p class="promo-badge promo-badge-lg">{{ offer.badge }}</p>
+                    <h3 class="promo-name">{{ offer.name }}</h3>
+                    {% if offer.description %}<p class="promo-description">{{ offer.description }}</p>{% endif %}
+                    <ul class="chip-row chip-row-start promo-services" aria-label="Prestations concernées">
+                        {% for s in offer.services %}<li><a class="chip" href="/prestations/{{ s.slug }}">{{ s.name }}</a></li>{% endfor %}
+                    </ul>
+                    <p class="promo-until">Jusqu'au {{ offer.last_day|date_fr('day') }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>

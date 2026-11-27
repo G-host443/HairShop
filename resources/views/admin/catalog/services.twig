@@ -1,0 +1,87 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.services' %}
+{% block title %}Prestations{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-primary" href="{{ url('admin.services.create', filters.category ? {categorie: filters.category} : {}) }}">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Nouvelle prestation
+    </a>
+{% endblock %}
+
+{% block content %}
+    {% include 'admin/catalog/_tabs.twig' %}
+
+    <form method="get" action="{{ url('admin.services') }}" class="admin-media-filters" role="search">
+        <label class="visually-hidden" for="svc-q">Rechercher</label>
+        <input type="search" class="form-control" id="svc-q" name="q" value="{{ filters.q }}" placeholder="Rechercher une prestation…">
+        <label class="visually-hidden" for="svc-cat">Catégorie</label>
+        <select class="form-select" id="svc-cat" name="categorie">
+            <option value="">Toutes les catégories</option>
+            {% for c in categories %}<option value="{{ c.id }}"{{ c.id == filters.category ? ' selected' }}>{{ c.name }}</option>{% endfor %}
+        </select>
+        <label class="visually-hidden" for="svc-status">Statut</label>
+        <select class="form-select" id="svc-status" name="statut">
+            <option value="">Tous les statuts</option>
+            <option value="active"{{ filters.status == 'active' ? ' selected' }}>Actives</option>
+            <option value="inactive"{{ filters.status == 'inactive' ? ' selected' }}>Désactivées</option>
+        </select>
+        <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+    </form>
+
+    {% if services is empty %}
+        <div class="admin-card text-center py-5">
+            <p class="mb-3">Aucune prestation{{ filters.q or filters.category or filters.status ? ' ne correspond à ces filtres' }}.</p>
+            <a class="btn btn-primary" href="{{ url('admin.services.create') }}">Créer une prestation</a>
+        </div>
+    {% else %}
+        {% set sortable = not filters.q and not filters.status %}
+        {% if sortable %}<p class="small text-secondary"><i class="bi bi-arrows-move" aria-hidden="true"></i> Faites glisser une ligne pour changer l'ordre d'affichage sur le site.</p>{% endif %}
+
+        {% for category_name, rows in services|group_by('category_name') %}
+            <section class="admin-card mb-4" aria-labelledby="cat-{{ loop.index }}">
+                <h2 class="h5 mb-3" id="cat-{{ loop.index }}">{{ category_name }}</h2>
+                <ul class="admin-list list-unstyled mb-0"{% if sortable %} data-sortable="{{ url('admin.services.reorder') }}"{% endif %}>
+                    {% for s in rows %}
+                        <li class="admin-list-item" data-id="{{ s.id }}">
+                            {% if sortable %}<span class="admin-drag" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>{% endif %}
+                            <span class="admin-list-thumb">
+                                {% if covers[s.cover_media_id] is defined %}
+                                    <img src="{{ covers[s.cover_media_id].url('thumb') }}" alt="" loading="lazy">
+                                {% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}
+                            </span>
+                            <span class="admin-list-main">
+                                <a href="{{ url('admin.services.edit', {id: s.id}) }}" class="fw-medium">{{ s.name }}</a>
+                                <span class="small text-secondary d-block">
+                                    {% if s.pricing_mode == 'matrix' %}
+                                        Grille taille × longueur · {{ s.variants_count }} taille{{ s.variants_count > 1 ? 's' }}
+                                        {% if s.min_price is not null %} · dès {{ s.min_price|number_format(0, ',', ' ') }} €{% endif %}
+                                    {% else %}
+                                        {{ {fixed: '', from: 'À partir de ', quote: 'Sur devis'}[s.price_kind] }}{% if s.price_kind != 'quote' %}{{ s.price|number_format(s.price == s.price|round ? 0 : 2, ',', ' ') }} €{% endif %}
+                                    {% endif %}
+                                    · {{ (s.duration_minutes // 60) }} h{{ s.duration_minutes % 60 ? ' ' ~ '%02d'|format(s.duration_minutes % 60) }}
+                                </span>
+                            </span>
+                            <span class="admin-list-badges">
+                                {% if s.is_featured %}<span class="badge text-bg-warning">Mise en avant</span>{% endif %}
+                                {% if not s.is_active %}<span class="badge text-bg-secondary">Désactivée</span>{% endif %}
+                                {% if s.pricing_mode == 'matrix' and s.variants_count == 0 %}<span class="badge text-bg-danger">Grille vide</span>{% endif %}
+                            </span>
+                            <span class="admin-list-actions">
+                                {% if s.pricing_mode == 'matrix' %}
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.services.grid', {id: s.id}) }}"><i class="bi bi-table" aria-hidden="true"></i> Grille</a>
+                                {% endif %}
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ url('admin.services.edit', {id: s.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden"> Modifier {{ s.name }}</span></a>
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endfor %}
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin-sortable.js') }}"></script>
+{% endblock %}

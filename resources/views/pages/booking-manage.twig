@@ -1,0 +1,49 @@
+<section class="section booking">
+    <div class="container">
+        <div class="booking-done card">
+            {% if message %}<p class="form-success" role="status">{{ message }}</p>{% endif %}
+
+            <h2 class="booking-title">Rendez-vous {{ booking.reference }}</h2>
+            <p class="booking-status booking-status-{{ booking.status }}">{{ booking.status_label }}</p>
+
+            <dl class="booking-summary-list booking-done-list">
+                <div><dt>Prestation</dt><dd>{{ booking.service_label }}{% for o in options %} + {{ o.label|lower }}{% endfor %}</dd></div>
+                <div><dt>Date</dt><dd>{{ booking.starts_at|date_fr('datetime')|capitalize }}</dd></div>
+                <div><dt>Fin estimée</dt><dd>{{ booking.ends_at|date_fr('time') }}</dd></div>
+                <div><dt>Prix</dt><dd>
+                    {% if booking.final_total is not null %}{{ booking.final_total|euros }}
+                    {% elseif booking.estimated_total is not null %}{{ booking.estimated_total|euros }} (estimation)
+                    {% else %}Sur devis{% endif %}
+                </dd></div>
+                <div><dt>Au nom de</dt><dd>{{ booking.first_name }} {{ booking.last_name }}</dd></div>
+            </dl>
+
+            {% if can_cancel %}
+                <details class="booking-cancel">
+                    <summary>Annuler ce rendez-vous</summary>
+                    <form method="post" action="/rdv/{{ token }}/annuler" data-confirm="Confirmer l'annulation ?">
+                        {{ csrf_field() }}
+                        <div class="form-field">
+                            <label for="m-reason">Motif (facultatif)</label>
+                            <textarea id="m-reason" name="reason" rows="2" maxlength="300"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-ghost">Confirmer l'annulation</button>
+                    </form>
+                </details>
+            {% elseif booking.status in ['pending', 'confirmed'] %}
+                <p class="notice">L'annulation en ligne n'est possible que jusqu'à {{ cancellation_hours }} h avant le rendez-vous. Pour tout changement, contactez-moi directement.</p>
+            {% endif %}
+
+            {% include 'pages/_review_form.twig' with {review_action: '/rdv/' ~ token ~ '/avis'} %}
+
+            <div class="booking-actions booking-actions-center">
+                <a class="btn btn-ghost" href="/">Retour au site</a>
+                {% if contact.mode == 'whatsapp' %}
+                    <a class="btn btn-primary" href="https://wa.me/{{ contact.whatsapp }}?text={{ ('Bonjour, à propos de mon rendez-vous ' ~ booking.reference ~ ' :')|url_encode }}" target="_blank" rel="noopener">Me contacter sur WhatsApp</a>
+                {% else %}
+                    <a class="btn btn-primary" href="/contact?message={{ ('À propos de mon rendez-vous ' ~ booking.reference ~ ' : ')|url_encode }}#contact">Me contacter</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>

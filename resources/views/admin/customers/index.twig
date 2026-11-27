@@ -1,0 +1,65 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.customers' %}
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3" role="search">
+        <div class="flex-grow-1" style="max-width: 26rem">
+            <label class="form-label small mb-1" for="c-q">Rechercher</label>
+            <input type="search" class="form-control" id="c-q" name="q" value="{{ q }}" placeholder="Nom, e-mail ou téléphone">
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="c-sort">Trier par</label>
+            <select class="form-select" id="c-sort" name="tri">
+                {% for key, label in sorts %}<option value="{{ key }}"{{ sort == key ? ' selected' }}>{{ label }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-outline-secondary">Rechercher</button>
+    </form>
+
+    <p class="small text-secondary" role="status">{{ total }} fiche{{ total > 1 ? 's' }}{{ q ? ' pour « ' ~ q ~ ' »' }}. Les fiches sont créées automatiquement à chaque réservation.</p>
+
+    <div class="admin-card p-0">
+        {% if items is empty %}
+            <p class="text-secondary m-3">Aucune cliente{{ q ? ' ne correspond à cette recherche' }}.</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table admin-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Contact</th>
+                            <th scope="col" class="text-end">Rendez-vous</th>
+                            <th scope="col">Dernier rendez-vous</th>
+                            <th scope="col" class="text-end">Total réalisé</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in items %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url('admin.customers.show', {id: c.id}) }}" class="fw-medium">{{ c.first_name }} {{ c.last_name }}</a>
+                                    {% if c.user_id %}<span class="badge text-bg-light ms-1" title="A créé un espace cliente">Compte</span>{% endif %}
+                                </td>
+                                <td class="small">{{ c.email ?? '' }}{% if c.email and c.phone %}<br>{% endif %}{{ c.phone ?? '' }}</td>
+                                <td class="text-end">{{ c.bookings_count }}{% if c.completed_count > 0 %} <span class="small text-secondary">({{ c.completed_count }} terminé{{ c.completed_count > 1 ? 's' }})</span>{% endif %}</td>
+                                <td class="small">{{ c.last_booking ? c.last_booking|date_fr('short') : '—' }}</td>
+                                <td class="text-end">{{ c.spent > 0 ? c.spent|euros : '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if pages > 1 %}
+        {% set base = url('admin.customers') ~ '?' ~ {q: q, tri: sort}|filter(v => v != '')|url_encode %}
+        <nav class="d-flex justify-content-center align-items-center gap-3 mt-3" aria-label="Pages">
+            {% if page > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}&page={{ page - 1 }}">Précédente</a>{% endif %}
+            <span class="small text-secondary">Page {{ page }} sur {{ pages }}</span>
+            {% if page < pages %}<a class="btn btn-sm btn-outline-secondary" href="{{ base }}&page={{ page + 1 }}">Suivante</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

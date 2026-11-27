@@ -1,0 +1,26 @@
+{% import '@components/forms.twig' as forms %}
+<!doctype html>
+<html lang="{{ app.locale }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{% block title %}Connexion{% endblock %} — {{ app.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500;600&family=Parisienne&display=swap">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}">
+</head>
+<body class="admin-auth">
+    <main class="admin-auth-card">
+        <p class="admin-auth-brand">{{ app.name }}</p>
+        <h1 class="admin-auth-title">{% block heading %}{{ block('title') }}{% endblock %}</h1>
+        {{ forms.alerts() }}
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/js/admin.js') }}"></script>
+</body>
+</html>

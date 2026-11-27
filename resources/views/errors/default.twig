@@ -1,0 +1,19 @@
+{% extends 'layouts/system.twig' %}
+
+{% block title %}{{ status }} — {{ title }}{% endblock %}
+
+{% block content %}
+    <p class="sys-code">{{ status }}</p>
+    <h1 class="sys-title">{{ title }}</h1>
+    {% if message != title %}<p class="sys-lead">{{ message }}</p>{% endif %}
+    <p><a class="sys-btn" href="/">Retour à l'accueil</a></p>
+
+    {% if exception %}
+        <details class="sys-debug" open>
+            <summary>Détail (mode debug)</summary>
+            <p><strong>{{ exception.message }}</strong></p>
+            <p>{{ exception.file }}:{{ exception.line }}</p>
+            <pre>{{ exception.traceAsString }}</pre>
+        </details>
+    {% endif %}
+{% endblock %}

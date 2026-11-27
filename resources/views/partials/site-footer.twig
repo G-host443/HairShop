@@ -1,0 +1,40 @@
+{% set socials = {instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok'} %}
+<footer class="site-footer">
+    <div class="container site-footer-inner">
+        <div class="site-footer-brand">
+            <p class="brand-name">{{ site_name }}</p>
+            {% if setting('general.tagline') %}<p class="site-footer-tagline">{{ setting('general.tagline') }}</p>{% endif %}
+            {% if setting('contact.public_location') %}<p class="site-footer-location">{{ setting('contact.public_location') }}</p>{% endif %}
+        </div>
+
+        {% set social_links = [] %}
+        {% for key, label in socials %}
+            {% set link = setting('social.' ~ key) %}
+            {% if link and (link starts with 'https://' or link starts with 'http://') %}
+                {% set social_links = social_links|merge([{key: key, label: label, url: link}]) %}
+            {% endif %}
+        {% endfor %}
+        {% if social_links is not empty %}
+            <ul class="site-footer-social" aria-label="Réseaux sociaux">
+                {% for s in social_links %}
+                    <li><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.label }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <ul class="site-footer-links" aria-label="Informations">
+            <li><a href="/prestations">Toutes les prestations</a></li>
+            <li><a href="/galerie">Réalisations</a></li>
+            <li><a href="/avis">Avis clientes</a></li>
+            {% if has_blog ?? false %}<li><a href="/blog">Conseils et actualités</a></li>{% endif %}
+            <li><a href="/compte">{{ customer_user() ? 'Mon espace' : 'Mon espace cliente' }}</a></li>
+            {% if has_contact_page %}<li><a href="/contact">Contact</a></li>{% endif %}
+            {% for p in footer_pages %}
+                <li><a href="/{{ p.slug }}">{{ p.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="container site-footer-bottom">
+        <p>© {{ 'now'|date('Y') }} {{ site_name }}</p>
+    </div>
+</footer>

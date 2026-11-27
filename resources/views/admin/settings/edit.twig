@@ -1,0 +1,108 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.settings' %}
+{% block title %}Paramètres{% endblock %}
+
+{% block content %}
+    <nav class="admin-tabs" aria-label="Rubriques des paramètres">
+        {% for key, info in groups %}
+            <a class="admin-tab{{ key == group ? ' active' }}" href="{{ url('admin.settings', {group: key}) }}"{% if key == group %} aria-current="page"{% endif %}>
+                <i class="bi bi-{{ info.icon }}" aria-hidden="true"></i> {{ info.label }}
+            </a>
+        {% endfor %}
+    </nav>
+
+    <form method="post" action="{{ url('admin.settings.update', {group: group}) }}" class="admin-card" novalidate>
+        {{ csrf_field() }}
+        <h2 class="h5 mb-4">{{ groups[group].label }}</h2>
+
+        {% for key, field in fields %}
+            {% set name = key|replace({'.': '__'}) %}
+            {% set id = 'set-' ~ name %}
+            {% set field_errors = errors(name) %}
+            {% set value = old(name, values[key]) %}
+            {% set described = field.help is defined ? id ~ '-help' : '' %}
+
+            <div class="mb-4 admin-setting">
+                {% if field.type == 'bool' %}
+                    <div class="form-check form-switch">
+                        <input type="hidden" name="{{ name }}" value="0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="{{ id }}" name="{{ name }}" value="1"
+                               {{ value ? 'checked' }} {% if described %}aria-describedby="{{ described }}"{% endif %}>
+                        <label class="form-check-label" for="{{ id }}">{{ field.label }}</label>
+                    </div>
+
+                {% elseif field.type == 'media' %}
+                    <span class="form-label d-block" id="{{ id }}-label">{{ field.label }}</span>
+                    {% set selected = value ? (selected_media[value] ?? null) : null %}
+                    <div class="admin-media-field" data-media-field>
+                        <input type="hidden" name="{{ name }}" value="{{ selected ? selected.id : '' }}" data-media-input>
+                        <div class="admin-media-field-preview" data-media-preview>
+                            {% if selected %}
+                                <img src="{{ selected.url('thumb') }}" alt="{{ selected.altText }}">
+                            {% else %}
+                                <span class="text-secondary small">Aucune image</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose aria-describedby="{{ id }}-label">
+                                <i class="bi bi-images" aria-hidden="true"></i> Choisir dans la bibliothèque
+                            </button>
+                            <button type="button" class="btn btn-link btn-sm text-danger" data-media-clear{{ selected ? '' : ' hidden' }}>Retirer</button>
+                        </div>
+                    </div>
+
+                {% else %}
+                    <label class="form-label" for="{{ id }}">
+                        {{ field.label }}{% if field.required ?? false %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}
+                    </label>
+                    {% set common %}id="{{ id }}" name="{{ name }}"{% if field.required ?? false %} required{% endif %}{% if described %} aria-describedby="{{ described }}"{% endif %}{% if field_errors %} aria-invalid="true"{% endif %}{% endset %}
+
+                    {% if field.type == 'textarea' %}
+                        <textarea class="form-control{{ field_errors ? ' is-invalid' }}" rows="3" {{ common|raw }}
+                                  {% if field.max is defined %}maxlength="{{ field.max }}"{% endif %}
+                                  {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}>{{ value }}</textarea>
+
+                    {% elseif field.type in ['select', 'timezone'] %}
+                        {% set options = field.type == 'timezone' ? timezones : field.options %}
+                        <select class="form-select{{ field_errors ? ' is-invalid' }}" {{ common|raw }}>
+                            {% for optValue, optLabel in options %}
+                                {% set optValue = field.type == 'timezone' ? optLabel : optValue %}
+                                <option value="{{ optValue }}"{{ (optValue ~ '') == (value ~ '') ? ' selected' }}>{{ optLabel }}</option>
+                            {% endfor %}
+                        </select>
+
+                    {% else %}
+                        {% set input_type = {email: 'email', tel: 'tel', url: 'url', int: 'number', whatsapp: 'text'}[field.type] ?? 'text' %}
+                        <div class="{{ field.suffix is defined ? 'input-group' : '' }}{{ field_errors ? ' has-validation' }}">
+                            <input type="{{ input_type }}" class="form-control{{ field_errors ? ' is-invalid' }}" {{ common|raw }}
+                                   value="{{ value }}"
+                                   {% if field.max is defined and field.type != 'int' %}maxlength="{{ field.max }}"{% endif %}
+                                   {% if field.type == 'int' %}min="{{ field.min }}" max="{{ field.max }}" step="1"{% endif %}
+                                   {% if field.type == 'whatsapp' %}inputmode="numeric"{% endif %}
+                                   {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}>
+                            {% if field.suffix is defined %}<span class="input-group-text">{{ field.suffix }}</span>{% endif %}
+                            {% if field_errors %}<div class="invalid-feedback">{{ field_errors|join(' ') }}</div>{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if field_errors and field.type in ['textarea', 'select', 'timezone'] %}
+                        <div class="invalid-feedback d-block">{{ field_errors|join(' ') }}</div>
+                    {% endif %}
+                {% endif %}
+
+                {% if field_errors and field.type == 'media' %}
+                    <div class="invalid-feedback d-block">{{ field_errors|join(' ') }}</div>
+                {% endif %}
+                {% if field.help is defined %}<div class="form-text" id="{{ id }}-help">{{ field.help }}</div>{% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+{% endblock %}

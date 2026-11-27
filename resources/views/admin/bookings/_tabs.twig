@@ -1,0 +1,4 @@
+<nav class="admin-tabs" aria-label="Affichage des rendez-vous">
+    <a class="admin-tab{{ tab == 'list' ? ' active' }}" href="{{ url('admin.bookings') }}"{% if tab == 'list' %} aria-current="page"{% endif %}><i class="bi bi-list-ul" aria-hidden="true"></i> Liste</a>
+    <a class="admin-tab{{ tab == 'calendar' ? ' active' }}" href="{{ url('admin.bookings.calendar') }}"{% if tab == 'calendar' %} aria-current="page"{% endif %}><i class="bi bi-calendar3" aria-hidden="true"></i> Calendrier</a>
+</nav>

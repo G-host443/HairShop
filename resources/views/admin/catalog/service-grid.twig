@@ -1,0 +1,202 @@
+{% extends 'admin/layouts/base.twig' %}
+
+{% set current_route = 'admin.services' %}
+{% block title %}Grille de prix — {{ service.name }}{% endblock %}
+
+{% block actions %}
+    <a class="btn btn-outline-secondary" href="{{ url('admin.services.edit', {id: service.id}) }}"><i class="bi bi-pencil" aria-hidden="true"></i> Fiche de la prestation</a>
+{% endblock %}
+
+{% block content %}
+    {% include 'admin/catalog/_tabs.twig' %}
+
+    {% set all_errors = errors() %}
+    {% if all_errors is not empty %}
+        <div class="alert alert-danger" role="alert">
+            <p class="fw-medium mb-1">La grille n'a pas été enregistrée :</p>
+            <ul class="mb-0">{% for messages in all_errors %}{% for m in messages %}<li>{{ m }}</li>{% endfor %}{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <div class="admin-card mb-4">
+        <h2 class="h6">Comment remplir la grille</h2>
+        <ul class="small mb-0">
+            <li>Une ligne par taille, une colonne par longueur.</li>
+            <li>Saisissez un <strong>prix</strong> (ex. <code>85</code> ou <code>85,50</code>), <strong>devis</strong> pour un prix sur devis, ou laissez <strong>vide</strong> si la longueur n'est pas proposée pour cette taille.</li>
+            <li>Les durées sont facultatives : sans durée, la durée de la taille puis celle de la prestation ({{ service.duration_minutes }} min) s'appliquent.</li>
+        </ul>
+    </div>
+
+    {% if variants is empty %}
+        <div class="admin-card text-center py-4 mb-4">
+            <p class="mb-0">Aucune taille pour l'instant : ajoutez-en une ci-dessous pour commencer la grille.</p>
+        </div>
+    {% else %}
+        {% set old_prices = old('prices', null) %}
+        {% set old_durations = old('durations', null) %}
+        <form method="post" action="{{ url('admin.services.grid.update', {id: service.id}) }}" class="mb-4" novalidate>
+            {{ csrf_field() }}
+
+            <div class="admin-card mb-4">
+                <h2 class="h6 mb-3">Prix (€)</h2>
+                <div class="table-responsive">
+                    <table class="table admin-grid align-middle">
+                        <caption class="visually-hidden">Prix par taille et par longueur pour {{ service.name }}</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Taille</th>
+                                {% for length in lengths %}<th scope="col">{{ length.label }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in variants %}
+                                <tr>
+                                    <th scope="row">{{ v.label ?: v.size_code }}</th>
+                                    {% for length in lengths %}
+                                        {% set cell = grid[v.id][length.id] ?? null %}
+                                        {% set value = cell ? (cell.kind == 'quote' ? 'devis' : cell.price|number_format(cell.price == cell.price|round ? 0 : 2, ',', '')) : '' %}
+                                        {% if old_prices is not null %}{% set value = old_prices[v.id][length.id] ?? '' %}{% endif %}
+                                        {% set invalid = all_errors['prices.' ~ v.id ~ '.' ~ length.id] is defined %}
+                                        <td>
+                                            <input type="text" inputmode="decimal" class="form-control form-control-sm admin-grid-input{{ invalid ? ' is-invalid' }}{{ value == 'devis' ? ' is-quote' }}"
+                                                   name="prices[{{ v.id }}][{{ length.id }}]" value="{{ value }}" maxlength="10"
+                                                   aria-label="Prix {{ v.label ?: v.size_code }}, {{ length.label }}" placeholder="—">
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <details class="admin-card mb-4"{{ grid|filter(row => row|filter(c => c.duration is not null)|length > 0)|length > 0 or old_durations is not null ? ' open' }}>
+                <summary class="h6 mb-0">Durées par longueur (facultatif, en minutes)</summary>
+                <div class="table-responsive mt-3">
+                    <table class="table admin-grid align-middle">
+                        <caption class="visually-hidden">Durées par taille et par longueur</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Taille</th>
+                                {% for length in lengths %}<th scope="col">{{ length.label }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in variants %}
+                                <tr>
+                                    <th scope="row">{{ v.label ?: v.size_code }}</th>
+                                    {% for length in lengths %}
+                                        {% set cell = grid[v.id][length.id] ?? null %}
+                                        {% set value = cell and cell.duration ? cell.duration : '' %}
+                                        {% if old_durations is not null %}{% set value = old_durations[v.id][length.id] ?? '' %}{% endif %}
+                                        <td>
+                                            <input type="number" min="15" max="1440" step="15" class="form-control form-control-sm admin-grid-input{{ all_errors['durations.' ~ v.id ~ '.' ~ length.id] is defined ? ' is-invalid' }}"
+                                                   name="durations[{{ v.id }}][{{ length.id }}]" value="{{ value }}"
+                                                   aria-label="Durée {{ v.label ?: v.size_code }}, {{ length.label }}" placeholder="—">
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <div class="admin-card mb-4">
+                <h2 class="h6 mb-3">Détails des tailles</h2>
+                <div class="row g-3">
+                    {% for v in variants %}
+                        {% set image = variant_images[v.image_media_id] ?? null %}
+                        <fieldset class="col-lg-6">
+                            <div class="admin-variant">
+                                <legend class="h6 d-flex align-items-center justify-content-between">
+                                    <span>Taille {{ v.size_code }} <span class="small text-secondary fw-normal">({{ v.size_label }})</span></span>
+                                </legend>
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <label class="form-label small" for="v-{{ v.id }}-label">Libellé spécifique</label>
+                                        <input class="form-control form-control-sm" id="v-{{ v.id }}-label" name="variants[{{ v.id }}][label]" value="{{ v.label }}" maxlength="60" placeholder="{{ v.size_code }}">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label small" for="v-{{ v.id }}-duration">Durée de la taille (min)</label>
+                                        <input type="number" min="15" max="1440" step="15" class="form-control form-control-sm" id="v-{{ v.id }}-duration" name="variants[{{ v.id }}][duration_minutes]" value="{{ v.duration_minutes }}" placeholder="{{ service.duration_minutes }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small" for="v-{{ v.id }}-note">Note affichée</label>
+                                        <input class="form-control form-control-sm" id="v-{{ v.id }}-note" name="variants[{{ v.id }}][note]" value="{{ v.note }}" maxlength="200" placeholder="Ex. : Avec mèches Xpression.">
+                                    </div>
+                                </div>
+                                <div class="admin-media-field mt-2" data-media-field>
+                                    <input type="hidden" name="variants[{{ v.id }}][image_media_id]" value="{{ image ? image.id : '' }}" data-media-input>
+                                    <div class="admin-media-field-preview admin-media-field-preview-sm" data-media-preview>
+                                        {% if image %}<img src="{{ image.url('thumb') }}" alt="{{ image.altText }}">{% else %}<span class="text-secondary small">Photo</span>{% endif %}
+                                    </div>
+                                    <div class="d-flex flex-column gap-1">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-media-choose>Choisir une photo</button>
+                                        <button type="button" class="btn btn-link btn-sm text-danger p-0" data-media-clear{{ image ? '' : ' hidden' }}>Retirer</button>
+                                    </div>
+                                    <div class="form-check form-switch ms-auto">
+                                        <input type="hidden" name="variants[{{ v.id }}][is_active]" value="0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="v-{{ v.id }}-active" name="variants[{{ v.id }}][is_active]" value="1"{{ v.is_active ? ' checked' }}>
+                                        <label class="form-check-label small" for="v-{{ v.id }}-active">Proposée</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="admin-sticky-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer la grille</button>
+            </div>
+        </form>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <form method="post" action="{{ url('admin.services.variants.store', {id: service.id}) }}" class="admin-card h-100">
+                {{ csrf_field() }}
+                <h2 class="h6 mb-3">Ajouter une taille</h2>
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm-4">
+                        <label class="form-label small" for="new-size">Taille</label>
+                        <select class="form-select form-select-sm{{ errors('size_id') ? ' is-invalid' }}" id="new-size" name="size_id" required>
+                            {% for size in sizes %}<option value="{{ size.id }}">{{ size.code }} — {{ size.label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label small" for="new-label">Libellé (facultatif)</label>
+                        <input class="form-control form-control-sm" id="new-label" name="label" maxlength="60" placeholder="Ex. : S – box braids">
+                    </div>
+                    <div class="col-sm-3"><button type="submit" class="btn btn-outline-secondary btn-sm w-100">Ajouter</button></div>
+                </div>
+                {% if errors('size_id') %}<div class="text-danger small mt-2">{{ errors('size_id')|first }}</div>{% endif %}
+                <p class="small text-secondary mt-2 mb-0">Taille ou longueur manquante ? <a href="{{ url('admin.catalog.dimensions') }}">Gérer les tailles et longueurs</a>.</p>
+            </form>
+        </div>
+        {% if variants is not empty %}
+            <div class="col-lg-6">
+                <div class="admin-card h-100">
+                    <h2 class="h6 mb-3">Retirer une taille</h2>
+                    <ul class="list-unstyled d-flex flex-wrap gap-2 mb-0">
+                        {% for v in variants %}
+                            <li>
+                                <form method="post" action="{{ url('admin.services.variants.destroy', {id: service.id, variantId: v.id}) }}" data-confirm="Retirer la taille {{ v.label ?: v.size_code }} et tous ses prix ?">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg" aria-hidden="true"></i> {{ v.label ?: v.size_code }}</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% include 'admin/media/_picker.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ asset('assets/js/media-picker.js') }}"></script>
+{% endblock %}

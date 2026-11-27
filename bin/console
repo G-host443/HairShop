@@ -1,0 +1,33 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use App\Core\Console\Application;
+use App\Core\Console\Commands;
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+$container = require dirname(__DIR__) . '/bootstrap/app.php';
+
+$app = new Application($container, [
+    Commands\AppCheckCommand::class,
+    Commands\KeyGenerateCommand::class,
+    Commands\MigrateCommand::class,
+    Commands\MigrateRollbackCommand::class,
+    Commands\MigrateStatusCommand::class,
+    Commands\MigrateFreshCommand::class,
+    Commands\DbSeedCommand::class,
+    Commands\CreateAdminCommand::class,
+    Commands\DisableTwoFactorCommand::class,
+    Commands\TemplatesPublishCommand::class,
+    Commands\NotificationsSendCommand::class,
+    Commands\BookingsRemindCommand::class,
+    Commands\BlogPublishScheduledCommand::class,
+    Commands\DemoClearCommand::class,
+    Commands\CacheClearCommand::class,
+]);
+
+exit($app->run($argv));

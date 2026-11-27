@@ -1,0 +1,117 @@
+{# Fiche d'une prestation, commune à tous les templates (classes génériques). #}
+<section class="section service-detail">
+    <div class="container">
+        <p class="breadcrumb-line"><a href="{{ url('services.index') }}">Prestations</a> · {{ service.category_name }}</p>
+
+        <div class="service-detail-grid">
+            <div class="service-detail-media">
+                {% if images is not empty %}
+                    <img class="service-detail-cover" fetchpriority="high" src="{{ images[0].url('large') }}" alt="{{ images[0].altText ?: service.name }}" width="{{ images[0].width }}" height="{{ images[0].height }}">
+                    {% if images|length > 1 %}
+                        <ul class="service-detail-thumbs">
+                            {% for image in images|slice(1) %}
+                                <li><a href="{{ image.url('large') }}" target="_blank" rel="noopener"><img src="{{ image.url('thumb') }}" alt="{{ image.altText ?: service.name }}" loading="lazy"></a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% else %}
+                    <div class="service-detail-placeholder" aria-hidden="true">{{ service.name|first }}</div>
+                {% endif %}
+            </div>
+
+            <div class="service-detail-body">
+                {% if service.summary %}<p class="hero-lead">{{ service.summary }}</p>{% endif %}
+                <dl class="service-facts">
+                    {% if price_label %}<div><dt>Tarif</dt><dd>{% if summary.original_price_label %}<s class="price-original" aria-label="au lieu de {{ summary.original_price_label }}">{{ summary.original_price_label }}</s> {% endif %}{{ price_label|capitalize }}</dd></div>{% endif %}
+                    <div><dt>Durée</dt><dd>{{ duration_label|capitalize }}</dd></div>
+                </dl>
+                {% if summary.promotion %}
+                    <p class="promo-notice"><span class="promo-badge">{{ summary.promotion.badge }}</span> <strong>{{ summary.promotion.name }}</strong> — jusqu'au {{ summary.promotion.last_day|date_fr('day') }}. Prix remisé déjà appliqué.</p>
+                {% endif %}
+                {% if service.alert_text %}<p class="notice">{{ service.alert_text }}</p>{% endif %}
+                {% if customer_user() %}
+                    <form method="post" action="/compte/favoris/{{ service.id }}" class="favorite-form">
+                        {{ csrf_field() }}
+                        <input type="hidden" name="return_to" value="/prestations/{{ service.slug }}">
+                        <button type="submit" class="btn btn-ghost btn-sm" aria-pressed="{{ is_favorite ? 'true' : 'false' }}">{{ is_favorite ? '♥ Dans mes favoris' : '♡ Ajouter à mes favoris' }}</button>
+                    </form>
+                {% else %}
+                    <p class="favorite-form"><a href="/compte/connexion?retour={{ ('/prestations/' ~ service.slug)|url_encode }}" class="text-muted">♡ Se connecter pour ajouter aux favoris</a></p>
+                {% endif %}
+                {% if service.note %}<p class="text-muted">{{ service.note }}</p>{% endif %}
+
+                {% if selector %}
+                    {# Sélecteur interactif (JavaScript) ; sans JavaScript, le tableau ci-dessous reste lisible. #}
+                    <div class="pricing-app pricing-app-single" data-pricing-app hidden></div>
+                    <script type="application/json" data-pricing-data>{{ selector_json|raw }}</script>
+
+                    {% if selector.variants is not empty %}
+                        <div class="pricing-fallback table-scroll">
+                            <table class="price-table">
+                                <caption>Tarifs selon la taille et la longueur</caption>
+                                <thead><tr><th scope="col">Longueur</th>{% for v in selector.variants %}<th scope="col">{{ v.label }}</th>{% endfor %}</tr></thead>
+                                <tbody>
+                                    {% set lengths = [] %}
+                                    {% for v in selector.variants %}{% for p in v.prices %}{% if p.length not in lengths %}{% set lengths = lengths|merge([p.length]) %}{% endif %}{% endfor %}{% endfor %}
+                                    {% for length in lengths %}
+                                        <tr>
+                                            <th scope="row">{{ length }}</th>
+                                            {% for v in selector.variants %}
+                                                {% set cell = v.prices|filter(p => p.length == length)|first %}
+                                                <td>{% if cell %}{% if cell.original %}<s class="price-original">{{ cell.original|euros }}</s> {% endif %}{{ cell.kind == 'quote' ? 'sur devis' : cell.price|euros }}{% else %}—{% endif %}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                    <p class="pricing-fallback"><a class="btn btn-primary" href="{{ booking_url }}"{% if booking_url starts with 'https://' %} target="_blank" rel="noopener"{% endif %}>{{ booking_label }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if paragraphs is not empty or service.benefits is not empty or service.steps is not empty or service.recommendations %}
+            <div class="service-detail-content">
+                {% if paragraphs is not empty %}
+                    <div class="prose">
+                        <h2>Description</h2>
+                        {% for p in paragraphs %}<p>{{ p|nl2br }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+                <div class="service-detail-lists">
+                    {% if service.benefits is not empty %}
+                        <div class="card"><h2 class="h3">Les avantages</h2><ul class="check-list-simple">{% for b in service.benefits %}<li>{{ b }}</li>{% endfor %}</ul></div>
+                    {% endif %}
+                    {% if service.steps is not empty %}
+                        <div class="card"><h2 class="h3">Le déroulé</h2><ol class="steps-list">{% for s in service.steps %}<li>{{ s }}</li>{% endfor %}</ol></div>
+                    {% endif %}
+                    {% if service.recommendations %}
+                        <div class="card"><h2 class="h3">Conseils</h2><p>{{ service.recommendations|nl2br }}</p></div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if gallery is not empty %}
+            <section class="service-gallery" aria-labelledby="service-gallery-title">
+                <h2 id="service-gallery-title">Réalisations</h2>
+                <ul class="gallery-grid">
+                    {% for item in gallery %}
+                        <li class="gallery-item">{% include 'partials/gallery-item.twig' with {item: item, group: 'prestation'} only %}</li>
+                    {% endfor %}
+                </ul>
+                <p class="section-more"><a href="/galerie?categorie={{ service.category_slug }}">Voir toutes les réalisations {{ service.category_name }}</a></p>
+            </section>
+        {% endif %}
+
+        {% if related is not empty %}
+            <aside class="service-related" aria-labelledby="related-title">
+                <h2 id="related-title">À associer</h2>
+                <ul class="chip-row chip-row-start">
+                    {% for r in related %}<li><a class="chip" href="{{ url('services.show', {slug: r.slug}) }}">{{ r.name }}</a></li>{% endfor %}
+                </ul>
+            </aside>
+        {% endif %}
+    </div>
+</section>
